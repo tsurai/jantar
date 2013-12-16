@@ -1,0 +1,11 @@
+# compiled objects
+*.o
+*.a
+*.so
+
+# folders
+_test
+
+# executables
+*.exe
+amber
