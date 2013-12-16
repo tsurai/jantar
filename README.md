@@ -1,6 +1,6 @@
 # Amber
 
-Amber is a very minimalistic mcv web framework written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini).
+Amber is a very minimalist mcv web framework written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini).
 
 ## Getting Started
 
@@ -30,7 +30,7 @@ func main() {
 
 ## Controller
 
-This is a very simple Controller example. A detailed description will follow soon.
+Using Controller and rendering Templates is very easy with Amber. For this simple example I'm going to assume the following directory structure. A detailed description will follow soon.
 ```
 |- controllers/
 |-- app.go
@@ -40,9 +40,8 @@ This is a very simple Controller example. A detailed description will follow soo
 | main.go
 ```
 
+*controllers/app.go*
 ```
-// controllers/app.go
-
 package controller
 
 import (
@@ -58,14 +57,13 @@ func (c *App) Index() {
 }
 ```
 
+*views/app/index.html*
 ```
-<!-- views/app/index.html -->
 <h1>Hello Controller</h1>
 ```
-
+  
+*main.go*
 ```
-// main.go
-
 package main
 
 import (
