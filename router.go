@@ -30,8 +30,11 @@ func newRouter() *router {
 	return &router{namedRoutes: make(map[string]*route)}
 }
 
-func (r *router) AddRoute(method string, route string, handler Handler) {
-	r.routes = append(r.routes, newRoute(method, route, handler, r))
+func (r *router) AddRoute(method string, pattern string, handler Handler) *route {
+	route := newRoute(method, pattern, handler, r)
+	r.routes = append(r.routes, route)
+
+	return route
 }
 
 func (r *router) searchRoute(method string, request string) (*route, Param) {
@@ -50,13 +53,38 @@ func (r *router) searchRoute(method string, request string) (*route, Param) {
 	return nil, nil
 }
 
+func (r *router) getReverseUrl(name string, param []interface{}) string {
+	route := r.getNamedRoute(name)
+	nParam := len(param)
+	if route != nil {
+		i := -1
+		regex := regexp.MustCompile("{.*}")
+		url := regex.ReplaceAllStringFunc(route.pattern, func(str string) string {
+			i = i + 1
+			if i <= nParam - 1 {
+				return param[i].(string)
+			} else {
+				return ""
+			}
+		})
+
+		return url
+	}
+
+	return ""
+}
+
+func (r *router) getNamedRoute(name string) *route {
+	return r.namedRoutes[name]
+}
+
 func (r *route) Name(name string) {
 	r.router.namedRoutes[name] = r
 }
 
 func newRoute(method string, pattern string, handler Handler, router *router) *route {
 	regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
-	pattern = regex.ReplaceAllStringFunc(pattern, func(s string) string {
+	regexPattern := regex.ReplaceAllStringFunc(pattern, func(s string) string {
 		return fmt.Sprintf("(?P<%s>[a-z]+)", s[1:len(s)-1])
 	})
 
@@ -77,7 +105,7 @@ func newRoute(method string, pattern string, handler Handler, router *router) *r
 		cAction = token[2]
 	}
 	
-	return &route{pattern, method, isController, cName, cAction, handler, router, regexp.MustCompile(pattern)}
+	return &route{pattern, method, isController, cName, cAction, handler, router, regexp.MustCompile(regexPattern)}
 }
 
 func servePublic(rw http.ResponseWriter, req *http.Request) {

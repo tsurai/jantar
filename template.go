@@ -10,8 +10,8 @@ import (
 )
 
 type templateManager struct {
-  router        *router
   directory     string
+  router        *router
   watcher       *fsnotify.Watcher
   tmplFuncs     template.FuncMap
   tmplList      *template.Template
@@ -23,8 +23,8 @@ func newtemplateManager(directory string, router *router) *templateManager {
       args[key] = value
       return template.HTML("")
     },
-    "url": func() string {
-      return "test"
+    "url": func(name string, args ...interface{}) string {
+      return router.getReverseUrl(name, args)
     },
   }
 
