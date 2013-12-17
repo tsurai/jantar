@@ -34,6 +34,10 @@ func (r *router) AddRoute(method string, pattern string, handler Handler) *route
 	route := newRoute(method, pattern, handler, r)
 	r.routes = append(r.routes, route)
 
+	if route.isController {
+		route.Name(cName + "#" + cAction)
+	}
+
 	return route
 }
 
@@ -54,7 +58,7 @@ func (r *router) searchRoute(method string, request string) (*route, Param) {
 }
 
 func (r *router) getReverseUrl(name string, param []interface{}) string {
-	route := r.getNamedRoute(name)
+	route := getNamedRoute
 	nParam := len(param)
 	if route != nil {
 		i := -1
@@ -75,11 +79,11 @@ func (r *router) getReverseUrl(name string, param []interface{}) string {
 }
 
 func (r *router) getNamedRoute(name string) *route {
-	return r.namedRoutes[name]
+	return r.namedRoutes[strings.ToLower(name)]
 }
 
 func (r *route) Name(name string) {
-	r.router.namedRoutes[name] = r
+	r.router.namedRoutes[strings.ToLower(name)] = r
 }
 
 func newRoute(method string, pattern string, handler Handler, router *router) *route {
