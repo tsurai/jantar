@@ -86,3 +86,4 @@ func main() {
 - models & db interfaces
 - middleware
 - convert post data to struct
+- flexible configurations
