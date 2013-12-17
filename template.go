@@ -9,7 +9,7 @@ import (
   "github.com/howeyc/fsnotify"
 )
 
-type tmplManager struct {
+type templateManager struct {
   router        *router
   directory     string
   watcher       *fsnotify.Watcher
@@ -17,7 +17,7 @@ type tmplManager struct {
   tmplList      *template.Template
 }
 
-func newTmplManager(directory string, router *router) *tmplManager {
+func newtemplateManager(directory string, router *router) *templateManager {
   funcs := template.FuncMap{
     "set": func(args map[string]string, key string, value string) template.HTML {
       args[key] = value
@@ -28,11 +28,11 @@ func newTmplManager(directory string, router *router) *tmplManager {
     },
   }
 
-  return &tmplManager{directory: directory, router: router, tmplFuncs: funcs}
+  return &templateManager{directory: directory, router: router, tmplFuncs: funcs}
 }
 
 // watcher listens for file events
-func (tm *tmplManager) watch() {
+func (tm *templateManager) watch() {
   for {
     select {
     case ev := <- tm.watcher.Event:
@@ -48,7 +48,7 @@ func (tm *tmplManager) watch() {
   } 
 }
 
-func (tm *tmplManager) loadTemplates() {
+func (tm *templateManager) loadTemplates() {
   var err error
   var templates *template.Template
 
@@ -109,7 +109,7 @@ func (tm *tmplManager) loadTemplates() {
   tm.tmplList = templates
 }
 
-func (tm *tmplManager) getTemplate(name string) *template.Template {
+func (tm *templateManager) getTemplate(name string) *template.Template {
   if tm.tmplList == nil {
     return nil
   }

@@ -25,8 +25,8 @@ func newController(ctx *context) Handler {
   return con.Interface()
 }
 
-func isControllerHandler(h Handler) bool {
-  t := reflect.TypeOf(h)
+func isControllerHandler(handler Handler) bool {
+  t := reflect.TypeOf(handler)
   if t.Kind() == reflect.Func && t.NumIn() != 0 && t.In(0).Implements(reflect.TypeOf((*IController)(nil)).Elem()) {
     return true
   }

@@ -16,9 +16,9 @@ type route struct {
 	isController 	bool
 	cName					string
 	cAction				string
+	handler 			Handler
 	router 				*router
 	regex 				*regexp.Regexp
-	handler 			Handler
 }
 
 type router struct {
@@ -30,8 +30,8 @@ func newRouter() *router {
 	return &router{namedRoutes: make(map[string]*route)}
 }
 
-func (r *router) AddRoute(method string, route string, h Handler) {
-	r.routes = append(r.routes, newRoute(method, route, h, r))
+func (r *router) AddRoute(method string, route string, handler Handler) {
+	r.routes = append(r.routes, newRoute(method, route, handler, r))
 }
 
 func (r *router) searchRoute(method string, request string) (*route, Param) {
@@ -54,7 +54,7 @@ func (r *route) Name(name string) {
 	r.router.namedRoutes[name] = r
 }
 
-func newRoute(method string, pattern string, h Handler, r *router) *route {
+func newRoute(method string, pattern string, handler Handler, router *router) *route {
 	regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
 	pattern = regex.ReplaceAllStringFunc(pattern, func(s string) string {
 		return fmt.Sprintf("(?P<%s>[a-z]+)", s[1:len(s)-1])
@@ -64,35 +64,34 @@ func newRoute(method string, pattern string, h Handler, r *router) *route {
 	cAction := ""
 	isController := false
 
-	if isControllerHandler(h) {
-		var f *runtime.Func
-	  if f = runtime.FuncForPC(reflect.ValueOf(h).Pointer()); f == nil {
+	if isControllerHandler(handler) {
+		var fn *runtime.Func
+	  if fn = runtime.FuncForPC(reflect.ValueOf(handler).Pointer()); fn == nil {
 			logger.Println("Failed to add route. Can't fetch controller function")
 			return nil
 	  }
 
 	  isController = true
-		token := strings.Split(f.Name(), ".")
+		token := strings.Split(fn.Name(), ".")
 		cName = token[1][2:len(token[1])-1]
 		cAction = token[2]
 	}
 	
-	return &route{pattern: pattern, method: method, handler: h, router: r, isController: isController,
-								cName: cName, cAction: cAction, regex: regexp.MustCompile(pattern)}
+	return &route{pattern, method, isController, cName, cAction, handler, router, regexp.MustCompile(pattern)}
 }
 
 func servePublic(rw http.ResponseWriter, req *http.Request) {
-	var f http.File
+	var file http.File
 	var err error
 	var stat os.FileInfo
 	fname := req.URL.Path[len("/public/"):]
 
 	if !strings.HasPrefix(fname, ".") {
-		if f, err = http.Dir("public").Open(fname); err == nil {
-			if stat, err = f.Stat(); err == nil {
+		if file, err = http.Dir("public").Open(fname); err == nil {
+			if stat, err = file.Stat(); err == nil {
 				if !stat.IsDir() {
-					http.ServeContent(rw, req, req.URL.Path, stat.ModTime(), f)
-					f.Close()
+					http.ServeContent(rw, req, req.URL.Path, stat.ModTime(), file)
+					file.Close()
 					return
 				}
 			}

@@ -16,7 +16,7 @@ var logger *log.Logger
 type Amber struct {
 	port 			uint
 	handlers 	[]http.Handler
-	tm				*tmplManager
+	tm				*templateManager
 	*router
 }
 
@@ -25,7 +25,7 @@ func New() *Amber {
 
 	a := &Amber{
 		port: 3000,
-		tm: newTmplManager("views", router),
+		tm: newtemplateManager("views", router),
 		router: router,
 	}
 
@@ -42,7 +42,7 @@ func (a *Amber) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	logger.Printf("%s %s", req.Method, req.RequestURI)
 
 	if route, param := a.searchRoute(req.Method, req.URL.Path); route != nil {
-		newContext(r.handler, route, rw, req, a.tm, param).callHandler()
+		newContext(route.handler, route, rw, req, a.tm, param).callHandler()
 	} else {
 		http.NotFound(rw, req)
 	}
