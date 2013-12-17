@@ -8,13 +8,14 @@ import (
 type context struct {
 	handler Handler
 	route		*route
+	tm 			*tmplManager
 	rw 			http.ResponseWriter
 	req 		*http.Request
 	payload map[reflect.Type]reflect.Value
 }
 
-func newContext(h Handler, route *route, rw http.ResponseWriter, req *http.Request, params Param) *context {
-	ctx := &context{handler: h, route: route, rw: rw, req: req, payload: make(map[reflect.Type]reflect.Value)}
+func newContext(h Handler, route *route, rw http.ResponseWriter, req *http.Request, tm *tmplManager, params Param) *context {
+	ctx := &context{handler: h, route: route, rw: rw, req: req, tm: tm, payload: make(map[reflect.Type]reflect.Value)}
 	ctx.addPayload(rw)
 	ctx.addPayload(req)
 	ctx.addPayload(params)

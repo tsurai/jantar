@@ -10,20 +10,13 @@ import (
 	"runtime"
 )
 
-type Params map[string]string
-
-type IRouter interface {
-	AddRoute(method string, route string, h Handler)
-	SearchRoute(method string, request string) (*route, Param)
-}
-
 type route struct {
 	pattern				string
 	method				string
-	name 					string
 	isController 	bool
 	cName					string
 	cAction				string
+	router 				*router
 	regex 				*regexp.Regexp
 	handler 			Handler
 }
@@ -33,15 +26,15 @@ type router struct {
 	routes				[]*route
 }
 
-func NewRouter() IRouter {
+func newRouter() *router {
 	return &router{namedRoutes: make(map[string]*route)}
 }
 
 func (r *router) AddRoute(method string, route string, h Handler) {
-	r.routes = append(r.routes, newRoute(method, route, h))
+	r.routes = append(r.routes, newRoute(method, route, h, r))
 }
 
-func (r *router) SearchRoute(method string, request string) (*route, Param) {
+func (r *router) searchRoute(method string, request string) (*route, Param) {
 	for i, route := range r.routes {
 		matches := route.regex.FindStringSubmatch(request)
 		if route.method == method || method == "Any" {
@@ -57,9 +50,13 @@ func (r *router) SearchRoute(method string, request string) (*route, Param) {
 	return nil, nil
 }
 
-func newRoute(method string, pattern string, h Handler) *route {
-	r := regexp.MustCompile("{[a-zA-Z0-9]+}")
-	pattern = r.ReplaceAllStringFunc(pattern, func(s string) string {
+func (r *route) Name(name string) {
+	r.router.namedRoutes[name] = r
+}
+
+func newRoute(method string, pattern string, h Handler, r *router) *route {
+	regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
+	pattern = regex.ReplaceAllStringFunc(pattern, func(s string) string {
 		return fmt.Sprintf("(?P<%s>[a-z]+)", s[1:len(s)-1])
 	})
 
@@ -80,7 +77,7 @@ func newRoute(method string, pattern string, h Handler) *route {
 		cAction = token[2]
 	}
 	
-	return &route{pattern: pattern, method: method, handler: h, isController: isController,
+	return &route{pattern: pattern, method: method, handler: h, router: r, isController: isController,
 								cName: cName, cAction: cAction, regex: regexp.MustCompile(pattern)}
 }
 

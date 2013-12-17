@@ -17,16 +17,16 @@ type Amber struct {
 	port 			uint
 	handlers 	[]http.Handler
 	tm				*tmplManager
-	IRouter
+	*router
 }
 
 func New() *Amber {
+	router := newRouter()
+
 	a := &Amber{
 		port: 3000,
-		tm: &tmplManager{
-			directory: "views",
-		},
-		IRouter: NewRouter(),
+		tm: newTmplManager("views", router),
+		router: router,
 	}
 
 	logger = log.New(os.Stdout, "[amber] ", 0)
@@ -41,8 +41,8 @@ func (a *Amber) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
   t0 := time.Now()
 	logger.Printf("%s %s", req.Method, req.RequestURI)
 
-	if r, p := a.SearchRoute(req.Method, req.URL.Path); r != nil {
-		newContext(r.handler, r, rw, req, p).callHandler()
+	if route, param := a.searchRoute(req.Method, req.URL.Path); route != nil {
+		newContext(r.handler, route, rw, req, a.tm, param).callHandler()
 	} else {
 		http.NotFound(rw, req)
 	}

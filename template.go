@@ -10,20 +10,26 @@ import (
 )
 
 type tmplManager struct {
+  router        *router
   directory     string
   watcher       *fsnotify.Watcher
-  templateFuncs *template.FuncMap
+  tmplFuncs     template.FuncMap
+  tmplList      *template.Template
 }
 
-var (
-  tmplList *template.Template
-  templateFuncs = template.FuncMap{
+func newTmplManager(directory string, router *router) *tmplManager {
+  funcs := template.FuncMap{
     "set": func(args map[string]string, key string, value string) template.HTML {
       args[key] = value
       return template.HTML("")
     },
+    "url": func() string {
+      return "test"
+    },
   }
-)
+
+  return &tmplManager{directory: directory, router: router, tmplFuncs: funcs}
+}
 
 // watcher listens for file events
 func (tm *tmplManager) watch() {
@@ -86,7 +92,7 @@ func (tm *tmplManager) loadTemplates() {
 
       // add the custom template functions to the first template
       if templates == nil {
-        templates, err = template.New(tmplName).Funcs(templateFuncs).Parse(string(fdata))
+        templates, err = template.New(tmplName).Funcs(tm.tmplFuncs).Parse(string(fdata))
       } else {
         _, err = templates.New(tmplName).Parse(string(fdata))
       }
@@ -100,13 +106,13 @@ func (tm *tmplManager) loadTemplates() {
   })
 
   // no errors occured, override the old list
-  tmplList = templates
+  tm.tmplList = templates
 }
 
-func getTemplate(name string) *template.Template {
-  if tmplList == nil {
+func (tm *tmplManager) getTemplate(name string) *template.Template {
+  if tm.tmplList == nil {
     return nil
   }
   
-  return tmplList.Lookup(strings.ToLower(name))
+  return tm.tmplList.Lookup(strings.ToLower(name))
 }

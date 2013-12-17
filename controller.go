@@ -10,8 +10,8 @@ type IController interface {
 
 type Controller struct {
   *context
-  params  map[string]string
-  flash   map[string]string
+  params      map[string]string
+  flash       map[string]string
 }
 
 func newController(ctx *context) Handler {
@@ -35,7 +35,7 @@ func isControllerHandler(h Handler) bool {
 
 func (c *Controller) Render(extraArgs... Handler) {
   tmplName := c.route.cName + "/" + c.route.cAction + ".html"
-  tmpl := getTemplate(tmplName)
+  tmpl := c.tm.getTemplate(tmplName)
 
   if tmpl == nil {
     c.rw.Write([]byte("Can't find template " + tmplName))
