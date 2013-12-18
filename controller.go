@@ -10,8 +10,8 @@ type IController interface {
 
 type Controller struct {
   *context
-  params      map[string]string
-  flash       map[string]string
+  Param     map[string]string
+  Flash     map[string]string
 }
 
 func newController(ctx *context) Handler {
@@ -20,7 +20,7 @@ func newController(ctx *context) Handler {
 
   base := con.Elem().Field(0).Interface().(*Controller)
   base.context = ctx
-  base.params = make(map[string]string)
+  base.Param = make(map[string]string)
 
   return con.Interface()
 }
@@ -40,7 +40,7 @@ func (c *Controller) Render(extraArgs... Handler) {
   if tmpl == nil {
     c.rw.Write([]byte("Can't find template " + tmplName))
     logger.Println("Can't find template ", tmplName)
-  } else if err := tmpl.Execute(c.rw, c.params); err != nil {
+  } else if err := tmpl.Execute(c.rw, c.Param); err != nil {
     logger.Println("Failed to render template:", err.Error())
   }
 }

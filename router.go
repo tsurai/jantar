@@ -60,6 +60,7 @@ func (r *router) searchRoute(method string, request string) (*route, Param) {
 func (r *router) getReverseUrl(name string, param []interface{}) string {
 	route := r.getNamedRoute(name)
 	nParam := len(param)
+	
 	if route != nil {
 		i := -1
 		regex := regexp.MustCompile("{.*}")

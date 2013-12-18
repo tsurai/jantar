@@ -10,12 +10,16 @@ type context struct {
 	route		*route
 	tm 			*templateManager
 	rw 			http.ResponseWriter
-	req 		*http.Request
+	Req 		*http.Request
 	payload map[reflect.Type]reflect.Value
 }
 
 func newContext(h Handler, route *route, rw http.ResponseWriter, req *http.Request, tm *templateManager, params Param) *context {
 	ctx := &context{h, route, tm, rw, req, make(map[reflect.Type]reflect.Value)}
+
+	if req.Method == "POST" {
+			req.ParseForm()
+	}
 
 	// TODO: find a better solution
 	ctx.addPayload(rw)
@@ -26,7 +30,7 @@ func newContext(h Handler, route *route, rw http.ResponseWriter, req *http.Reque
 }
 
 func (ctx *context) callHandler() {
-	t := reflect.TypeOf(ctx.handler)
+	handlerType := reflect.TypeOf(ctx.handler)
 	var in []reflect.Value
 
 	i := 0
@@ -36,20 +40,25 @@ func (ctx *context) callHandler() {
 		in = append(in, reflect.ValueOf(c))
 	}
 
-	for ; i < t.NumIn(); i++ {
-		if t.In(i).Kind() == reflect.Interface {
+	for ; i < handlerType.NumIn(); i++ {
+		paramType := handlerType.In(i)
+		if paramType.Kind() == reflect.Interface {
 			for k, v := range ctx.payload {
-				if k.Implements(t.In(i)) {
+				if k.Implements(paramType) {
 					in = append(in, v)
 				}
 			}
-		} else if v := ctx.payload[t.In(i)]; v.IsValid() {
+		} else if v := ctx.payload[paramType]; v.IsValid() {
 			in = append(in, v)
+		} else if (ctx.route.method == "POST") && (paramType.Kind() == reflect.Ptr) && (paramType.Elem().Kind() == reflect.Struct) {
+			if v := ParsePostData(ctx.Req.PostForm, paramType); !v.IsNil() {
+				in = append(in, v)
+			}
 		}
 	}
 
-	if len(in) != t.NumIn() {
-		logger.Printf("Invalid parameter count! Expected %d but got %d\n", t.NumIn(), len(in))
+	if len(in) != handlerType.NumIn() {
+		logger.Printf("Invalid parameter count! Expected %d but got %d\n", handlerType.NumIn(), len(in))
 	}
 
 	// TODO: catch exception
