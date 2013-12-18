@@ -6,14 +6,6 @@ import (
 	"strings"
 )
 
-/*
-type User struct {
-	Name			string
-	Email			string
-	Password	string
-}
-*/
-
 func ParsePostData(src url.Values, dst reflect.Type) reflect.Value {
 	if len(src) <= 0 {
 		logger.Println("Failed to parse post data. Data is nil")
