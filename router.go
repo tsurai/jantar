@@ -35,7 +35,7 @@ func (r *router) AddRoute(method string, pattern string, handler Handler) *route
 	r.routes = append(r.routes, route)
 
 	if route.isController {
-		route.Name(cName + "#" + cAction)
+		route.Name(route.cName + "#" + route.cAction)
 	}
 
 	return route
@@ -58,7 +58,7 @@ func (r *router) searchRoute(method string, request string) (*route, Param) {
 }
 
 func (r *router) getReverseUrl(name string, param []interface{}) string {
-	route := getNamedRoute
+	route := r.getNamedRoute(name)
 	nParam := len(param)
 	if route != nil {
 		i := -1
