@@ -5,13 +5,14 @@ import (
 )
 
 type IController interface {
-  Render(extraArgs... Handler)
+  Redirect(name string)
+  Render()
 }
 
 type Controller struct {
   *context
-  Param     map[string]string
-  Flash     map[string]string
+  RenderArgs  map[string]interface{}
+  Flash       map[string]string
 }
 
 func newController(ctx *context) Handler {
@@ -20,7 +21,7 @@ func newController(ctx *context) Handler {
 
   base := con.Elem().Field(0).Interface().(*Controller)
   base.context = ctx
-  base.Param = make(map[string]string)
+  base.RenderArgs = make(map[string]interface{})
 
   return con.Interface()
 }
@@ -33,14 +34,20 @@ func isControllerHandler(handler Handler) bool {
   return false
 }
 
-func (c *Controller) Render(extraArgs... Handler) {
+func (c *Controller) Redirect(name string) {
+  url := c.route.router.getReverseUrl(name, nil)
+  c.rw.Header().Set("Location", url)
+  c.rw.WriteHeader(302)
+}
+
+func (c *Controller) Render() {
   tmplName := c.route.cName + "/" + c.route.cAction + ".html"
   tmpl := c.tm.getTemplate(tmplName)
 
   if tmpl == nil {
     c.rw.Write([]byte("Can't find template " + tmplName))
     logger.Println("![Warning]! Can't find template ", tmplName)
-  } else if err := tmpl.Execute(c.rw, c.Param); err != nil {
+  } else if err := tmpl.Execute(c.rw, c.RenderArgs); err != nil {
     logger.Println("![Warning]! Failed to render template:", err.Error())
   }
 }

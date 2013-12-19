@@ -19,7 +19,7 @@ type templateManager struct {
 
 func newtemplateManager(directory string, router *router) *templateManager {
   funcs := template.FuncMap{
-    "set": func(args map[string]string, key string, value string) template.HTML {
+    "set": func(args map[string]interface{}, key string, value interface{}) template.HTML {
       args[key] = value
       return template.HTML("")
     },

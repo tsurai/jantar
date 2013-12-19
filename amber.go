@@ -41,7 +41,7 @@ func (a *Amber) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
   t0 := time.Now()
 	logger.Printf("%s %s", req.Method, req.RequestURI)
 
-	if route, param := a.searchRoute(req.Method, req.URL.Path); route != nil {
+	if route, param := a.searchRoute(req.Method, req.RequestURI); route != nil {
 		newContext(route.handler, route, rw, req, a.tm, param).callHandler()
 	} else {
 		http.NotFound(rw, req)
