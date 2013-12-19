@@ -39,8 +39,8 @@ func (c *Controller) Render(extraArgs... Handler) {
 
   if tmpl == nil {
     c.rw.Write([]byte("Can't find template " + tmplName))
-    logger.Println("Can't find template ", tmplName)
+    logger.Println("![Warning]! Can't find template ", tmplName)
   } else if err := tmpl.Execute(c.rw, c.Param); err != nil {
-    logger.Println("Failed to render template:", err.Error())
+    logger.Println("![Warning]! Failed to render template:", err.Error())
   }
 }

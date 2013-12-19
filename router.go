@@ -100,7 +100,7 @@ func newRoute(method string, pattern string, handler Handler, router *router) *r
 	if isControllerHandler(handler) {
 		var fn *runtime.Func
 	  if fn = runtime.FuncForPC(reflect.ValueOf(handler).Pointer()); fn == nil {
-			logger.Println("Failed to add route. Can't fetch controller function")
+			logger.Println("![Warning]! Failed to add route. Can't fetch controller function")
 			return nil
 	  }
 

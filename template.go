@@ -42,7 +42,7 @@ func (tm *templateManager) watch() {
         return
       }
     case err := <-tm.watcher.Error:
-      logger.Println("File Watcher:", err)
+      logger.Println("![Warning]! File Watcher:", err)
       return
     }
   } 
@@ -76,7 +76,7 @@ func (tm *templateManager) loadTemplates() {
 
       // add the current directory to the watcher
       if err = tm.watcher.Watch(path); err != nil {
-        logger.Println("Can't watch directory %s. %s", path, err.Error())
+        logger.Println("![Warning]! Can't watch directory %s. %s", path, err.Error())
       }
       return nil
     }
@@ -84,7 +84,7 @@ func (tm *templateManager) loadTemplates() {
     if strings.HasSuffix(info.Name(), ".html") {
       fdata, err := ioutil.ReadFile(path)
       if err != nil {
-        logger.Println("Failed to read template file", path)
+        logger.Println("![Warning]! Failed to read template file", path)
         return nil
       }
 
@@ -98,7 +98,7 @@ func (tm *templateManager) loadTemplates() {
       }
 
       if err != nil {
-        logger.Println("Failed to parse template " + tmplName + ". " + err.Error())
+        logger.Println("![Warning]! Failed to parse template " + tmplName + ". " + err.Error())
         return nil
       }
     }

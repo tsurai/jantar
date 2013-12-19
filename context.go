@@ -58,7 +58,7 @@ func (ctx *context) callHandler() {
 	}
 
 	if len(in) != handlerType.NumIn() {
-		logger.Printf("Invalid parameter count! Expected %d but got %d\n", handlerType.NumIn(), len(in))
+		logger.Printf("![Warning]! Invalid parameter count! Expected %d but got %d\n", handlerType.NumIn(), len(in))
 	}
 
 	// TODO: catch exception
