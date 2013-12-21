@@ -7,100 +7,132 @@ import (
 )
 
 type Validation struct {
-	results []*ValidationResult
+	HasErrors	bool
+	Errors 		map[string]string
 }
 
 type ValidationResult struct {
-	valid 	bool
-	message	string
+	validation 	*Validation
+	valid 			bool
+	name				string
 }
 
-func (v *Validation) addValidationResult(valid bool, message string) *ValidationResult {
-		result := &ValidationResult{valid, message}
+func (v *Validation) addValidationResult(name string, valid bool, message string) *ValidationResult {
+		result := &ValidationResult{v, valid, name}
 
-		if result != nil {
-			v.results = append(v.results, result)
+		if result != nil && valid {
+			v.HasErrors = true
+			v.Errors[name] = message
 		}
 		
 		return result
 }
 
-func (vr *ValidationResult) Message(msg string) {
+func (vr *ValidationResult) Message(msg string) *ValidationResult {
 	if vr == nil {
-		logger.Println("Failed to set validation Message. Result is nil")
+		logger.Println("![Warning]! Failed to set validation message, result is nil")
 	}
 
-	vr.message = msg
+	vr.validation.Errors[vr.name] = msg
+
+	return vr
 }
 
-func (v *Validation) Required(obj interface{}) *ValidationResult {
+func (vr *ValidationResult) IsValid() bool {
+	return vr.valid
+}
+
+func (v *Validation) Required(name string, obj interface{}) *ValidationResult {
 	defaultMessage := "Required"
 
 	if obj == nil {
-		return v.addValidationResult(false, defaultMessage)
+		return v.addValidationResult(name, false, defaultMessage)
 	}
 	
-	if val, ok := obj.(int); ok {
-		return v.addValidationResult(val != 0, defaultMessage)
+	if value, ok := obj.(int); ok {
+		return v.addValidationResult(name, value != 0, defaultMessage)
 	}
 
-	if val, ok := obj.(string); ok {
-		return v.addValidationResult(len(val) > 0, defaultMessage)
+	if value, ok := obj.(string); ok {
+		return v.addValidationResult(name, len(value) > 0, defaultMessage)
 	}
 
-	if val, ok := obj.(time.Time); ok {
-		return v.addValidationResult(val.IsZero(), defaultMessage)
+	if value, ok := obj.(time.Time); ok {
+		return v.addValidationResult(name, value.IsZero(), defaultMessage)
 	}
 
-	val := reflect.ValueOf(obj)
-	if val.Kind() == reflect.Slice {
-		return v.addValidationResult(val.Len() > 0, defaultMessage)
-	}
-
-	return nil
-}
-
-func (v *Validation) Min(obj interface{}, min int) *ValidationResult {
-	defaultMessage := fmt.Sprintf("Small than %d", min)
-
-	if obj == nil {
-		return v.addValidationResult(false, defaultMessage)
-	}
-
-	if val, ok := obj.(int); ok {
-		return v.addValidationResult(val >= min, defaultMessage)
-	}
-
-	if val, ok := obj.(string); ok {
-		return v.addValidationResult(len(val) >= min, defaultMessage)
-	}
-
-	val := reflect.ValueOf(obj)
-	if val.Kind() == reflect.Slice {
-		return v.addValidationResult(val.Len() >= min, defaultMessage)
+	value := reflect.ValueOf(obj)
+	if value.Kind() == reflect.Slice {
+		return v.addValidationResult(name, value.Len() > 0, defaultMessage)
 	}
 
 	return nil
 }
 
-func (v *Validation) Max(obj interface{}, max int) *ValidationResult {
-	defaultMessage := fmt.Sprintf("Larger than %d", max)
+func (v *Validation) Min(name string, obj interface{}, min int) *ValidationResult {
+	defaultMessage := fmt.Sprintf("Must be larger than %d", min)
 
 	if obj == nil {
-		return v.addValidationResult(false, defaultMessage)
+		return v.addValidationResult(name, false, defaultMessage)
 	}
 
-	if val, ok := obj.(int); ok {
-		return v.addValidationResult(val <= max, defaultMessage)
+	if value, ok := obj.(int); ok {
+		return v.addValidationResult(name, value >= min, defaultMessage)
 	}
 
-	if val, ok := obj.(string); ok {
-		return v.addValidationResult(len(val) <= max, defaultMessage)
+	if value, ok := obj.(string); ok {
+		return v.addValidationResult(name, len(value) >= min, defaultMessage)
 	}
 
-	val := reflect.ValueOf(obj)
-	if val.Kind() == reflect.Slice {
-		return v.addValidationResult(val.Len() <= max, defaultMessage)
+	value := reflect.ValueOf(obj)
+	if value.Kind() == reflect.Slice {
+		return v.addValidationResult(name, value.Len() >= min, defaultMessage)
+	}
+
+	return nil
+}
+
+func (v *Validation) Max(name string, obj interface{}, max int) *ValidationResult {
+	defaultMessage := fmt.Sprintf("Must be smaller than %d", max)
+
+	if obj == nil {
+		return v.addValidationResult(name, false, defaultMessage)
+	}
+
+	if value, ok := obj.(int); ok {
+		return v.addValidationResult(name, value <= max, defaultMessage)
+	}
+
+	if value, ok := obj.(string); ok {
+		return v.addValidationResult(name, len(value) <= max, defaultMessage)
+	}
+
+	value := reflect.ValueOf(obj)
+	if value.Kind() == reflect.Slice {
+		return v.addValidationResult(name, value.Len() <= max, defaultMessage)
+	}
+
+	return nil
+}
+
+func (v *Validation) MinMax(name string, obj interface{}, min int, max int) *ValidationResult {
+	defaultMessage := fmt.Sprintf("Must be larger %d and smaller %d", min, max)
+
+	if obj == nil {
+		return v.addValidationResult(name, false, defaultMessage)
+	}
+
+	if value, ok := obj.(int); ok {
+		return v.addValidationResult(name, value >= min && value <= max, defaultMessage)
+	}
+
+	if value, ok := obj.(string); ok {
+		return v.addValidationResult(name, len(value) >= min && len(value) <= max, defaultMessage)
+	}
+
+	value := reflect.ValueOf(obj)
+	if value.Kind() == reflect.Slice {
+		return v.addValidationResult(name, value.Len() >= min && value.Len() <= max, defaultMessage)
 	}
 
 	return nil
