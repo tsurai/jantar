@@ -7,7 +7,7 @@ import (
 )
 
 type Validation struct {
-	HasErrors	bool
+	hasErrors	bool
 	errors 		map[string][]string
 }
 
@@ -18,11 +18,15 @@ type ValidationResult struct {
 	index				int
 }
 
+func (v *Validation) HasErrors() bool {
+	return v.hasErrors
+}
+
 func (v *Validation) addValidationResult(name string, valid bool, message string) *ValidationResult {
 	result := &ValidationResult{v, valid, name, -1}
 
 		if !valid {
-			v.HasErrors = true
+			v.hasErrors = true
 			v.errors[name] = append(v.errors[name], message)
 			result.index = len(v.errors[name]) - 1
 		}

@@ -51,7 +51,7 @@ func isControllerHandler(handler Handler) bool {
 }
 
 func (c *Controller) SaveErrors() {
-  if c.Validation.HasErrors {
+  if c.Validation.hasErrors {
     values := url.Values{}
     for key, array := range c.Validation.errors {
       for _, val := range array {
