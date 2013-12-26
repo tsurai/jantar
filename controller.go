@@ -2,6 +2,8 @@ package amber
 
 import (
   "reflect"
+  "net/http"
+  "net/url"
 )
 
 type IController interface {
@@ -11,6 +13,7 @@ type IController interface {
 
 type Controller struct {
   *context
+  *Validation
   RenderArgs  map[string]interface{}
   Flash       map[string]string
 }
@@ -21,7 +24,20 @@ func newController(ctx *context) Handler {
 
   base := con.Elem().Field(0).Interface().(*Controller)
   base.context = ctx
+  base.Validation = &Validation{}
+  base.Validation.errors = make(map[string][]string)
   base.RenderArgs = make(map[string]interface{})
+
+  /* fetch validation errors from cookie */
+  if cookie, err := ctx.Req.Cookie("AMBER_ERRORS"); err == nil {
+    if m, err := url.ParseQuery(cookie.Value); err == nil {
+      base.Validation.errors = m
+    }
+
+    /* delete cookie */
+    cookie.MaxAge = -9999
+    http.SetCookie(ctx.rw, cookie)
+  }
 
   return con.Interface()
 }
@@ -34,6 +50,19 @@ func isControllerHandler(handler Handler) bool {
   return false
 }
 
+func (c *Controller) SaveErrors() {
+  if c.Validation.HasErrors {
+    values := url.Values{}
+    for key, array := range c.Validation.errors {
+      for _, val := range array {
+        values.Add(key, val)
+      }
+    }
+
+    http.SetCookie(c.rw, &http.Cookie{Name: "AMBER_ERRORS", Value: values.Encode(), Secure: false, HttpOnly: true, Path: "/"})
+  }
+}
+
 func (c *Controller) Redirect(name string) {
   url := c.route.router.getReverseUrl(name, nil)
   c.rw.Header().Set("Location", url)
@@ -43,6 +72,10 @@ func (c *Controller) Redirect(name string) {
 func (c *Controller) Render() {
   tmplName := c.route.cName + "/" + c.route.cAction + ".html"
   tmpl := c.tm.getTemplate(tmplName)
+
+  if len(c.Validation.errors) > 0 {
+    c.RenderArgs["errors"] = c.Validation.errors
+  }
 
   if tmpl == nil {
     c.rw.Write([]byte("Can't find template " + tmplName))

@@ -8,21 +8,23 @@ import (
 
 type Validation struct {
 	HasErrors	bool
-	Errors 		map[string]string
+	errors 		map[string][]string
 }
 
 type ValidationResult struct {
 	validation 	*Validation
 	valid 			bool
 	name				string
+	index				int
 }
 
 func (v *Validation) addValidationResult(name string, valid bool, message string) *ValidationResult {
-		result := &ValidationResult{v, valid, name}
+	result := &ValidationResult{v, valid, name, -1}
 
-		if result != nil && valid {
+		if !valid {
 			v.HasErrors = true
-			v.Errors[name] = message
+			v.errors[name] = append(v.errors[name], message)
+			result.index = len(v.errors[name]) - 1
 		}
 		
 		return result
@@ -33,7 +35,9 @@ func (vr *ValidationResult) Message(msg string) *ValidationResult {
 		logger.Println("![Warning]! Failed to set validation message, result is nil")
 	}
 
-	vr.validation.Errors[vr.name] = msg
+	if vr.index != -1 {
+		vr.validation.errors[vr.name][vr.index] = msg
+	}
 
 	return vr
 }

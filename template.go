@@ -19,9 +19,15 @@ type templateManager struct {
 
 func newtemplateManager(directory string, router *router) *templateManager {
   funcs := template.FuncMap{
-    "set": func(args map[string]interface{}, key string, value interface{}) template.HTML {
+    "set": func(args map[string]interface{}, key string, value interface{}) string {
       args[key] = value
-      return template.HTML("")
+      return ""
+    },
+    "errorClass": func(errors []string) string {
+      if errors != nil {
+          return "has-error"
+      }
+      return ""
     },
     "url": func(name string, args ...interface{}) string {
       return router.getReverseUrl(name, args)
