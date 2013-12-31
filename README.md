@@ -85,6 +85,6 @@ func main() {
 - proper error handling
 - models & db interfaces
 - middleware
-- convert post data to struct
+- ~~convert post data to struct~~
 - flexible configurations
 
