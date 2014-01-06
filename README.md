@@ -1,6 +1,6 @@
 # Amber
 
-Amber is a very minimalist mcv web framework written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini) and [Revel](https://github.com/robfig/revel).
+Amber is a very minimalist mvc web framework written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini) and [Revel](https://github.com/robfig/revel).
 
 ## Getting Started
 
