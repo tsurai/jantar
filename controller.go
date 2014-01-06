@@ -18,8 +18,8 @@ type Controller struct {
   Flash       map[string]string
 }
 
-func newController(ctx *context) Handler {
-  con := reflect.New(reflect.TypeOf(ctx.handler).In(0).Elem())
+func newController(ctx *context) interface{} {
+  con := reflect.New(ctx.route.controllerType)
   con.Elem().Field(0).Set(reflect.ValueOf(new(Controller)))
 
   base := con.Elem().Field(0).Interface().(*Controller)
@@ -42,12 +42,12 @@ func newController(ctx *context) Handler {
   return con.Interface()
 }
 
-func isControllerHandler(handler Handler) bool {
+func isControllerHandler(handler Handler) (bool, reflect.Type) {
   t := reflect.TypeOf(handler)
   if t.Kind() == reflect.Func && t.NumIn() != 0 && t.In(0).Implements(reflect.TypeOf((*IController)(nil)).Elem()) {
-    return true
+    return true, t.In(0).Elem()
   }
-  return false
+  return false, nil
 }
 
 func (c *Controller) SaveErrors() {

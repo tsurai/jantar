@@ -11,14 +11,15 @@ import (
 )
 
 type route struct {
-	pattern				string
-	method				string
-	isController 	bool
-	cName					string
-	cAction				string
-	handler 			Handler
-	router 				*router
-	regex 				*regexp.Regexp
+	pattern					string
+	method					string
+	isController 		bool
+	controllerType 	reflect.Type
+	cName						string
+	cAction					string
+	handler 				interface{}
+	router 					*router
+	regex 					*regexp.Regexp
 }
 
 type router struct {
@@ -26,28 +27,37 @@ type router struct {
 	routes				[]*route
 }
 
+// Router functions ----------------------------------------------
 func newRouter() *router {
 	return &router{namedRoutes: make(map[string]*route)}
 }
 
 func (r *router) AddRoute(method string, pattern string, handler Handler) *route {
 	route := newRoute(method, pattern, handler, r)
-	r.routes = append(r.routes, route)
-
 	if route.isController {
 		route.Name(route.cName + "#" + route.cAction)
+		r.routes = append(r.routes, route)
+
+		return route
 	}
+
+	return nil
+}
+
+func (r *router) AddRouteFunc(method string, pattern string, handler func(http.ResponseWriter, *http.Request)) * route {
+	route := newRoute(method, pattern, handler, r)
+	r.routes = append(r.routes, route)
 
 	return route
 }
 
 func (r *router) searchRoute(method string, request string) (*route, Param) {
 	for i, route := range r.routes {
-		matches := route.regex.FindStringSubmatch(request)
 		if route.method == method || method == "Any" {
+			matches := route.regex.FindStringSubmatch(request)
 			if len(matches) > 0 && matches[0] == request {
 				params := make(Param)
-				for i := 1; i < len(matches); i++ {
+				for i := 1; i < len(matches)-1; i++ {
 					params[route.regex.SubexpNames()[i]] = matches[i]
 				}
 				return r.routes[i], params
@@ -83,34 +93,38 @@ func (r *router) getNamedRoute(name string) *route {
 	return r.namedRoutes[strings.ToLower(name)]
 }
 
-func (r *route) Name(name string) {
-	r.router.namedRoutes[strings.ToLower(name)] = r
-}
-
+// Route functions ---------------------------------------------
 func newRoute(method string, pattern string, handler Handler, router *router) *route {
 	regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
 	regexPattern := regex.ReplaceAllStringFunc(pattern, func(s string) string {
 		return fmt.Sprintf("(?P<%s>[a-z]+)", s[1:len(s)-1])
 	})
+	regexPattern = regexPattern + "(\\?.*)?"
 
 	cName := ""
 	cAction := ""
 	isController := false
+	var controllerType reflect.Type
 
-	if isControllerHandler(handler) {
+	if ok, t := isControllerHandler(handler); ok {
 		var fn *runtime.Func
 	  if fn = runtime.FuncForPC(reflect.ValueOf(handler).Pointer()); fn == nil {
 			logger.Println("![Warning]! Failed to add route. Can't fetch controller function")
 			return nil
 	  }
 
+	  controllerType = t
 	  isController = true
 		token := strings.Split(fn.Name(), ".")
 		cName = token[1][2:len(token[1])-1]
 		cAction = token[2]
 	}
 	
-	return &route{pattern, method, isController, cName, cAction, handler, router, regexp.MustCompile(regexPattern)}
+	return &route{pattern, method, isController, controllerType, cName, cAction, handler, router, regexp.MustCompile(regexPattern)}
+}
+
+func (r *route) Name(name string) {
+	r.router.namedRoutes[strings.ToLower(name)] = r
 }
 
 func servePublic(rw http.ResponseWriter, req *http.Request) {
