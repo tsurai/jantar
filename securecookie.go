@@ -2,7 +2,6 @@ package amber
 
 import (
 	"fmt"
-	"io"
 	"time"
 	"net/http"
 	"net/url"
@@ -89,7 +88,7 @@ func encrypt(plaintext string, key []byte) []byte {
   ciphertext := make([]byte, aes.BlockSize + len(baseplaintext))
   iv := ciphertext[:aes.BlockSize]
   
-  if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+  if _, err := rand.Read(iv); err != nil {
   	return nil
   }
   
@@ -133,7 +132,7 @@ func decrypt(data []byte, key []byte) string {
 func init() {
 	// generate a 256 byte secretkey on startup
 	secretkey := make([]byte, 32)
-	if _, err := io.ReadFull(rand.Reader, secretkey); err != nil {
+	if _, err := rand.Read(secretkey); err != nil {
 		panic("Failed to generate secret key. " + err.Error())
 	}
 }

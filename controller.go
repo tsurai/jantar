@@ -28,13 +28,13 @@ func newController(ctx *context) Handler {
   base.Validation.errors = make(map[string][]string)
   base.RenderArgs = make(map[string]interface{})
 
-  /* fetch validation errors from cookie */
+  // fetch validation errors from cookie
   if cookie, err := ctx.Req.Cookie("AMBER_ERRORS"); err == nil {
     if m, err := url.ParseQuery(cookie.Value); err == nil {
       base.Validation.errors = m
     }
 
-    /* delete cookie */
+    // delete cookie
     cookie.MaxAge = -9999
     http.SetCookie(ctx.rw, cookie)
   }
