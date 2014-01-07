@@ -2,6 +2,7 @@ package amber
 
 import (
 	"fmt"
+	"math"
 	"time"
 	"reflect"
 )
@@ -144,4 +145,33 @@ func (v *Validation) MinMax(name string, obj interface{}, min int, max int) *Val
 	}
 
 	return nil
+}
+
+func (v *Validation) Length(name string, obj interface{}, length int) *ValidationResult {
+	defaultMessage := fmt.Sprintf("Must be %d symbols long", length)
+
+	if obj == nil {
+		return v.addValidationResult(name, false, defaultMessage)
+	}
+
+	if value, ok := obj.(int); ok {
+		return v.addValidationResult(name, int(math.Ceil(math.Log10(float64(value)))) == length, defaultMessage)
+	}
+
+	if value, ok := obj.(string); ok {
+		return v.addValidationResult(name, len(value) == length, defaultMessage)
+	}
+
+	value := reflect.ValueOf(obj)
+	if value.Kind() == reflect.Slice {
+		return v.addValidationResult(name, value.Len() == length, defaultMessage)
+	}
+
+	return nil
+}
+
+func (v *Validation) Equals(name string, obj interface{}, obj2 interface{}) *ValidationResult {
+	defaultMessage := fmt.Sprintf("%v does not equal %v", obj, obj2)
+
+	return v.addValidationResult(name, obj == obj2, defaultMessage)
 }

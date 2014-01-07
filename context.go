@@ -39,14 +39,6 @@ func (ctx *context) callHandler() {
 	c := newController(ctx)
 	in = append(in, reflect.ValueOf(c))
 
-/*
-	TURN INTO A CONTROLLER FUNCTION
-	if (ctx.route.method == "POST") && (paramType.Kind() == reflect.Ptr) && (paramType.Elem().Kind() == reflect.Struct) {
-		if v := ParsePostData(ctx.Req.PostForm, paramType); !v.IsNil() {
-			in = append(in, v)
-		}
-	}
-*/
 	// TODO: catch exception
 	ret := reflect.ValueOf(ctx.handler).Call(in)
 	if len(ret) > 0 {

@@ -1,6 +1,7 @@
 package amber
 
 import (
+  "fmt"
   "strings"
   "reflect"
   "net/http"
@@ -78,6 +79,7 @@ func (c *Controller) ExtractObject(name string, obj interface{}) interface{} {
 func (c *Controller) SaveErrors() {
   if c.Validation.hasErrors {
     values := url.Values{}
+    fmt.Println(c.Validation.errors)
     for key, array := range c.Validation.errors {
       for _, val := range array {
         values.Add(key, val)
