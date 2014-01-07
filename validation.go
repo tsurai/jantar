@@ -170,6 +170,7 @@ func (v *Validation) Length(name string, obj interface{}, length int) *Validatio
 	return nil
 }
 
+// ERROR: doesn't work correctly
 func (v *Validation) Equals(name string, obj interface{}, obj2 interface{}) *ValidationResult {
 	defaultMessage := fmt.Sprintf("%v does not equal %v", obj, obj2)
 

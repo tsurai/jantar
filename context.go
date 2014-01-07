@@ -13,12 +13,12 @@ type context struct {
 	rw 				http.ResponseWriter
 	Req 			*http.Request
 	UrlParam 	map[string]string
+	PostParam map[string]string
 	GetParam 	url.Values
-	PostParam url.Values
 }
 
 func newContext(h Handler, route *route, rw http.ResponseWriter, req *http.Request, tm *templateManager, params Param) *context {
-	ctx := &context{handler: h, route: route, tm: tm, rw: rw, Req: req, UrlParam: params}
+	ctx := &context{handler: h, route: route, tm: tm, rw: rw, Req: req, UrlParam: params, PostParam: make(map[string]string)}
 
 	var err error
 	if ctx.GetParam, err = url.ParseQuery(req.URL.RawQuery); err != nil {
@@ -26,8 +26,10 @@ func newContext(h Handler, route *route, rw http.ResponseWriter, req *http.Reque
 	}
 
 	if req.Method == "POST" {
-			req.ParseForm()
-			ctx.PostParam = req.Form
+		req.ParseForm()
+		for key, val := range req.Form {
+			ctx.PostParam[key] = val[0]
+		}
 	}
 
 	return ctx
