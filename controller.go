@@ -1,7 +1,6 @@
 package amber
 
 import (
-  "fmt"
   "strings"
   "reflect"
   "net/http"
@@ -55,9 +54,8 @@ func isControllerHandler(handler Handler) (bool, reflect.Type) {
 func (c *Controller) ExtractObject(name string, obj interface{}) interface{} {
   if len(c.PostParam) <= 0 {
     logger.Println("![Warning]! Failed to parse post data. Data is nil")
-    return reflect.ValueOf(nil)
+    return nil
   }
-
 
   if reflect.TypeOf(obj).Kind() != reflect.Ptr {
     return nil
@@ -73,13 +71,12 @@ func (c *Controller) ExtractObject(name string, obj interface{}) interface{} {
     }
   }
 
-  return objvalue
+  return objvalue.Interface()
 }
 
 func (c *Controller) SaveErrors() {
   if c.Validation.hasErrors {
     values := url.Values{}
-    fmt.Println(c.Validation.errors)
     for key, array := range c.Validation.errors {
       for _, val := range array {
         values.Add(key, val)
