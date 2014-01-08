@@ -1,11 +1,12 @@
 package amber
 
 import (
-	"net/url"
-	"reflect"
-	"strings"
+	_ "net/url"
+	_ "reflect"
+	_ "strings"
 )
 
+/*
 func ParsePostData(src url.Values, dst reflect.Type) reflect.Value {
 	if len(src) <= 0 {
 		logger.Println("![Warning]! Failed to parse post data. Data is nil")
@@ -29,4 +30,4 @@ func ParsePostData(src url.Values, dst reflect.Type) reflect.Value {
 	}
 
 	return dstval
-}
+}*/

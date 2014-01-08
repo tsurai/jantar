@@ -32,7 +32,7 @@ func New() *Amber {
 	logger = log.New(os.Stdout, "[amber] ", 0)
 	a.tm.loadTemplates()
 
-	a.AddRoute("GET", "/public/.+", servePublic)
+	a.AddRouteFunc("GET", "/public/.+", servePublic)
 
 	return a
 }
@@ -42,7 +42,11 @@ func (a *Amber) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	logger.Printf("%s %s", req.Method, req.RequestURI)
 
 	if route, param := a.searchRoute(req.Method, req.RequestURI); route != nil {
-		newContext(route.handler, route, rw, req, a.tm, param).callHandler()
+		if route.isController {
+			newContext(route.handler, route, rw, req, a.tm, param).callHandler()
+		} else {
+			route.handler.(func(http.ResponseWriter, *http.Request))(rw, req)
+		}
 	} else {
 		http.NotFound(rw, req)
 	}

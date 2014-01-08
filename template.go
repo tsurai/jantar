@@ -32,6 +32,9 @@ func newtemplateManager(directory string, router *router) *templateManager {
     "url": func(name string, args ...interface{}) string {
       return router.getReverseUrl(name, args)
     },
+    "flash": func(args map[string]interface{}, key string) string {
+      return args["flash"].(map[string]string)[key]
+    },
   }
 
   return &templateManager{directory: directory, router: router, tmplFuncs: funcs}
