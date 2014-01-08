@@ -174,5 +174,5 @@ func (v *Validation) Length(name string, obj interface{}, length int) *Validatio
 func (v *Validation) Equals(name string, obj interface{}, obj2 interface{}) *ValidationResult {
 	defaultMessage := fmt.Sprintf("%v does not equal %v", obj, obj2)
 
-	return v.addValidationResult(name, obj == obj2, defaultMessage)
+	return v.addValidationResult(name, reflect.DeepEqual(obj, obj2), defaultMessage)
 }
