@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"time"
+	"regexp"
 	"reflect"
 )
 
@@ -170,9 +171,27 @@ func (v *Validation) Length(name string, obj interface{}, length int) *Validatio
 	return nil
 }
 
-// ERROR: doesn't work correctly
 func (v *Validation) Equals(name string, obj interface{}, obj2 interface{}) *ValidationResult {
 	defaultMessage := fmt.Sprintf("%v does not equal %v", obj, obj2)
 
+	if obj == nil || obj2 == nil {
+		return v.addValidationResult(name, false, defaultMessage)
+	}
+
 	return v.addValidationResult(name, reflect.DeepEqual(obj, obj2), defaultMessage)
 }
+
+func (v *Validation) MatchRegex(name string, obj interface{}, pattern string) *ValidationResult {
+	defaultMessage := fmt.Sprintf("Must match regex %s", pattern)
+
+	if obj == nil {
+		return v.addValidationResult(name, false, defaultMessage)
+	}
+
+  matched, err := regexp.MatchString(pattern, reflect.ValueOf(obj).String())
+  if err != nil {
+  	return v.addValidationResult(name, false, defaultMessage)
+  }
+
+  return v.addValidationResult(name, matched, defaultMessage)
+} 
