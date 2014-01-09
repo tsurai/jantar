@@ -194,4 +194,8 @@ func (v *Validation) MatchRegex(name string, obj interface{}, pattern string) *V
   }
 
   return v.addValidationResult(name, matched, defaultMessage)
-} 
+}
+
+func (v *Validation) Custom(name string, match bool, message string) *ValidationResult {
+	return v.addValidationResult(name, match, message)
+}
