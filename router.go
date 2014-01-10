@@ -3,6 +3,7 @@ package amber
 import (
 	"os"
 	"fmt"
+	"strconv"
 	"strings"
 	"regexp"
 	"net/http"
@@ -23,13 +24,15 @@ type route struct {
 }
 
 type router struct {
-	namedRoutes 	map[string]*route
-	routes				[]*route
+	hostname 		string
+	port 				string
+	namedRoutes map[string]*route
+	routes			[]*route
 }
 
 // Router functions ----------------------------------------------
-func newRouter() *router {
-	return &router{namedRoutes: make(map[string]*route)}
+func newRouter(hostname string, port uint) *router {
+	return &router{hostname: hostname, port: strconv.FormatUint(uint64(port), 10), namedRoutes: make(map[string]*route)}
 }
 
 func (r *router) AddRoute(method string, pattern string, handler Handler) *route {
@@ -83,7 +86,11 @@ func (r *router) getReverseUrl(name string, param []interface{}) string {
 			}
 		})
 
-		return url
+		if r.port != "80" || r.port != "8080" {
+			return "http://" + r.hostname + ":" + r.port + url
+		} else {
+			return "http://" + r.hostname + url
+		}
 	}
 
 	return ""

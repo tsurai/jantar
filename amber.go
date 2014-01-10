@@ -15,17 +15,19 @@ type Param map[string]string
 var logger *log.Logger
 
 type Amber struct {
+	hostname 	string
 	port 			uint
 	handlers 	[]http.Handler
 	tm				*templateManager
 	*router
 }
 
-func New() *Amber {
-	router := newRouter()
+func New(hostname string, port uint) *Amber {
+	router := newRouter(hostname, port)
 
 	a := &Amber{
-		port: 3000,
+		hostname: hostname,
+		port: port,
 		tm: newTemplateManager("views", router),
 		router: router,
 	}
