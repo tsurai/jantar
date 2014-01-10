@@ -16,7 +16,8 @@ type IController interface {
 type Controller struct {
   *context
   *Validation
-  Flash       map[string]string
+  alert       map[string]string
+  flash       map[string]string
   RenderArgs  map[string]interface{}
 }
 
@@ -29,7 +30,8 @@ func newController(ctx *context) interface{} {
   base.Validation = &Validation{}
   base.Validation.errors = make(map[string][]string)
   base.RenderArgs = make(map[string]interface{})
-  base.Flash = make(map[string]string)
+  base.flash = make(map[string]string)
+  base.alert = make(map[string]string)
 
   // fetch validation errors from cookie
   if cookie, err := ctx.Req.Cookie("AMBER_ERRORS"); err == nil {
@@ -46,7 +48,21 @@ func newController(ctx *context) interface{} {
   if cookie, err := ctx.Req.Cookie("AMBER_FLASH"); err == nil {
     if m, err := url.ParseQuery(cookie.Value); err == nil {
       for key, val := range m {
-        base.Flash[key] = val[0]
+        base.flash[key] = val[0]
+      }
+    }
+
+    // delete cookie
+    cookie.MaxAge = -9999
+    http.SetCookie(ctx.rw, cookie)
+  }
+
+  // fetch alert from cookie
+  if cookie, err := ctx.Req.Cookie("AMBER_ALERT"); err == nil {
+    if m, err := url.ParseQuery(cookie.Value); err == nil {
+      m.Encode()
+      for key, val := range m {
+        base.alert[key] = val[0]
       }
     }
 
@@ -99,19 +115,23 @@ func (c *Controller) AddFlash(name string, obj interface{}) {
     for i := 0; i < t.NumField(); i++ {
       field := t.Field(i)
       if field.Tag.Get("amber") != "noflash" {
-        c.Flash[name + "." + field.Name] = fmt.Sprintf("%v", value.Field(i).Interface())
+        c.flash[name + "." + field.Name] = fmt.Sprintf("%v", value.Field(i).Interface())
       }
     }
   } else {
     // TODO: there has to be a better way
-    c.Flash[name] = fmt.Sprintf("%v", obj)
+    c.flash[name] = fmt.Sprintf("%v", obj)
   }
 }
 
+func (c *Controller) AlertSuccess(msg string) {
+  http.SetCookie(c.rw, &http.Cookie{Name: "AMBER_ALERT", Value: url.Values{"success": []string{msg}}.Encode(), Secure: false, HttpOnly: true, Path: "/"})
+}
+
 func (c *Controller) SaveFlash() {
-  if len(c.Flash) > 0 {
+  if len(c.flash) > 0 {
     values := url.Values{}
-    for key, val := range c.Flash {
+    for key, val := range c.flash {
       values.Add(key, val)
     }
 
@@ -146,7 +166,8 @@ func (c *Controller) Render() {
     c.RenderArgs["errors"] = c.Validation.errors
   }
 
-  c.RenderArgs["flash"] = c.Flash
+  c.RenderArgs["flash"] = c.flash
+  c.RenderArgs["alert"] = c.alert
 
   if tmpl == nil {
     c.rw.Write([]byte("Can't find template " + tmplName))
