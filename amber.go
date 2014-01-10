@@ -5,6 +5,7 @@ import (
 	"log"
 	"fmt"
 	"time"
+	"reflect"
 	"net/http"
 )
 
@@ -25,7 +26,7 @@ func New() *Amber {
 
 	a := &Amber{
 		port: 3000,
-		tm: newtemplateManager("views", router),
+		tm: newTemplateManager("views", router),
 		router: router,
 	}
 
@@ -35,6 +36,15 @@ func New() *Amber {
 	a.AddRouteFunc("GET", "/public/.+", servePublic)
 
 	return a
+}
+
+func (a *Amber) AddModule(config interface{}) {
+	switch reflect.TypeOf(config) {
+	case reflect.TypeOf(&MailerConfig{}):
+		Mailer.initialize(a.tm, config.(*MailerConfig))
+	case reflect.TypeOf(&DatabaseConfig{}):
+		DB.initialize(config.(*DatabaseConfig))
+	}
 }
 
 func (a *Amber) ServeHTTP(rw http.ResponseWriter, req *http.Request) {

@@ -17,7 +17,7 @@ type templateManager struct {
   tmplList      *template.Template
 }
 
-func newtemplateManager(directory string, router *router) *templateManager {
+func newTemplateManager(directory string, router *router) *templateManager {
   funcs := template.FuncMap{
     "set": func(args map[string]interface{}, key string, value interface{}) string {
       args[key] = value
@@ -98,7 +98,7 @@ func (tm *templateManager) loadTemplates() {
       }
 
       tmplName := strings.Replace(strings.ToLower(path[len(tm.directory)+1:]), "\\", "/", -1)
-
+      
       // add the custom template functions to the first template
       if templates == nil {
         templates, err = template.New(tmplName).Funcs(tm.tmplFuncs).Parse(string(fdata))
@@ -122,6 +122,6 @@ func (tm *templateManager) getTemplate(name string) *template.Template {
   if tm.tmplList == nil {
     return nil
   }
-  
+
   return tm.tmplList.Lookup(strings.ToLower(name))
 }

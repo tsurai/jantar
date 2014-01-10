@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"net/http"
 	"net/url"
-  "github.com/jinzhu/gorm"
 )
 
 type context struct {
@@ -13,14 +12,13 @@ type context struct {
 	tm 				*templateManager
 	rw 				http.ResponseWriter
 	Req 			*http.Request
-	DB				*gorm.DB
 	UrlParam 	map[string]string
 	PostParam map[string]string
 	GetParam 	url.Values
 }
 
 func newContext(h Handler, route *route, rw http.ResponseWriter, req *http.Request, tm *templateManager, params Param) *context {
-	ctx := &context{handler: h, route: route, tm: tm, rw: rw, Req: req, DB: db, UrlParam: params, PostParam: make(map[string]string)}
+	ctx := &context{handler: h, route: route, tm: tm, rw: rw, Req: req, UrlParam: params, PostParam: make(map[string]string)}
 
 	var err error
 	if ctx.GetParam, err = url.ParseQuery(req.URL.RawQuery); err != nil {
