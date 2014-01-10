@@ -97,7 +97,7 @@ func (r *router) getNamedRoute(name string) *route {
 func newRoute(method string, pattern string, handler Handler, router *router) *route {
 	regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
 	regexPattern := regex.ReplaceAllStringFunc(pattern, func(s string) string {
-		return fmt.Sprintf("(?P<%s>[a-z]+)", s[1:len(s)-1])
+		return fmt.Sprintf("(?P<%s>[a-zA-Z0-9]+)", s[1:len(s)-1])
 	})
 	regexPattern = regexPattern + "(\\?.*)?"
 
