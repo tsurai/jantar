@@ -97,7 +97,12 @@ func (r *router) getReverseUrl(name string, param []interface{}) string {
 }
 
 func (r *router) getNamedRoute(name string) *route {
-	return r.namedRoutes[strings.ToLower(name)]
+	route, ok := r.namedRoutes[strings.ToLower(name)]
+	if ok {
+		return route
+	}
+	
+	return nil
 }
 
 // Route functions ---------------------------------------------
