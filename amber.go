@@ -41,11 +41,17 @@ func New(hostname string, port uint) *Amber {
 }
 
 func (a *Amber) AddModule(config interface{}) {
+	var err error
+
 	switch reflect.TypeOf(config) {
 	case reflect.TypeOf(&MailerConfig{}):
-		Mailer.initialize(a.tm, config.(*MailerConfig))
+		err = Mailer.initialize(a.tm, config.(*MailerConfig))
 	case reflect.TypeOf(&DatabaseConfig{}):
-		DB.initialize(config.(*DatabaseConfig))
+		err = DB.initialize(config.(*DatabaseConfig))
+	}
+
+	if err != nil {
+		logger.Fatal("[Fatal] " + err.Error())
 	}
 }
 
