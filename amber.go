@@ -51,7 +51,7 @@ func (a *Amber) AddModule(config interface{}) {
 	}
 
 	if err != nil {
-		logger.Fatal("[Fatal] " + err.Error())
+		logger.Fatal("[Fatal]", err)
 	}
 }
 
@@ -74,5 +74,5 @@ func (a *Amber) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 func (a *Amber) Run() {
 	logger.Println("Starting server & listening on port", a.port)
-	logger.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", a.port), a))
+	logger.Fatal("[Fatal]", http.ListenAndServe(fmt.Sprintf(":%d", a.port), a))
 }

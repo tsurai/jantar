@@ -38,7 +38,7 @@ func (v *Validation) addValidationResult(name string, valid bool, message string
 
 func (vr *ValidationResult) Message(msg string) *ValidationResult {
 	if vr == nil {
-		logger.Println("![Warning]! Failed to set validation message, result is nil")
+		logger.Println("[Warning] Failed to set validation message, result is nil")
 	}
 
 	if vr.index != -1 {

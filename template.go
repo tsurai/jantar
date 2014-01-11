@@ -51,7 +51,7 @@ func (tm *templateManager) watch() {
         return
       }
     case err := <-tm.watcher.Error:
-      logger.Println("![Warning]! File Watcher:", err)
+      logger.Println("[Warning] File Watcher:", err)
       return
     }
   } 
@@ -68,14 +68,14 @@ func (tm *templateManager) loadTemplates() {
   
   // create a new watcher and start the watcher thread
   if tm.watcher, err = fsnotify.NewWatcher(); err != nil {
-    panic("Failed to create new watcher:" + err.Error())
+    logger.Fatal("[Fatal] Failed to create new watcher:", err)
   }
   go tm.watch()
 
   // walk resursive through the template directory
   filepath.Walk(tm.directory, func(path string, info os.FileInfo, err error) error {
     if err != nil {
-      panic(err)
+      logger.Fatal("[Fatal]", err)
     }
 
     if info.IsDir() {
@@ -85,7 +85,7 @@ func (tm *templateManager) loadTemplates() {
 
       // add the current directory to the watcher
       if err = tm.watcher.Watch(path); err != nil {
-        logger.Println("![Warning]! Can't watch directory %s. %s", path, err.Error())
+        logger.Println("[Warning] Can't watch directory %s. %s", path, err.Error())
       }
       return nil
     }
@@ -93,7 +93,7 @@ func (tm *templateManager) loadTemplates() {
     if strings.HasSuffix(info.Name(), ".html") {
       fdata, err := ioutil.ReadFile(path)
       if err != nil {
-        logger.Println("![Warning]! Failed to read template file", path)
+        logger.Println("[Warning] Failed to read template file", path)
         return nil
       }
 

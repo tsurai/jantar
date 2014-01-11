@@ -133,6 +133,6 @@ func init() {
 	// generate a 256 byte secretkey on startup
 	secretkey := make([]byte, 32)
 	if _, err := rand.Read(secretkey); err != nil {
-		panic("Failed to generate secret key. " + err.Error())
+		logger.Fatal("[Fatal] Failed to generate secret key.", err)
 	}
 }
