@@ -6,6 +6,7 @@ import (
   "reflect"
   "net/http"
   "net/url"
+  "html/template"
 )
 
 type IController interface {
@@ -16,8 +17,9 @@ type IController interface {
 type Controller struct {
   *context
   *Validation
-  alert       map[string]string
+  Session     map[string]string
   flash       map[string]string
+  alert       map[string]template.HTML
   RenderArgs  map[string]interface{}
 }
 
@@ -30,10 +32,12 @@ func newController(ctx *context) interface{} {
   base.Validation = &Validation{}
   base.Validation.errors = make(map[string][]string)
   base.RenderArgs = make(map[string]interface{})
+  base.Session = make(map[string]string)
   base.flash = make(map[string]string)
-  base.alert = make(map[string]string)
+  base.alert = make(map[string]template.HTML)
 
   // fetch validation errors from cookie
+
   if cookie, err := ctx.Req.Cookie("AMBER_ERRORS"); err == nil {
     if m, err := url.ParseQuery(cookie.Value); err == nil {
       base.Validation.errors = m
@@ -60,15 +64,23 @@ func newController(ctx *context) interface{} {
   // fetch alert from cookie
   if cookie, err := ctx.Req.Cookie("AMBER_ALERT"); err == nil {
     if m, err := url.ParseQuery(cookie.Value); err == nil {
-      m.Encode()
       for key, val := range m {
-        base.alert[key] = val[0]
+        base.alert[key] = template.HTML(val[0])
       }
     }
 
     // delete cookie
     cookie.MaxAge = -9999
     http.SetCookie(ctx.rw, cookie)
+  }
+
+  // fetch session from cookie
+  if cookie, err := ctx.Req.Cookie("AMBER_SESSION"); err == nil {
+    if m, err := url.ParseQuery(cookie.Value); err == nil {
+      for key, val := range m {
+        base.Session[key] = val[0]
+      }
+    }
   }
 
   return con.Interface()
@@ -128,6 +140,10 @@ func (c *Controller) AlertSuccess(msg string) {
   http.SetCookie(c.rw, &http.Cookie{Name: "AMBER_ALERT", Value: url.Values{"success": []string{msg}}.Encode(), Secure: false, HttpOnly: true, Path: "/"})
 }
 
+func (c *Controller) AlertError(msg string) {
+  http.SetCookie(c.rw, &http.Cookie{Name: "AMBER_ALERT", Value: url.Values{"danger": []string{msg}}.Encode(), Secure: false, HttpOnly: true, Path: "/"})
+}
+
 func (c *Controller) SaveFlash() {
   if len(c.flash) > 0 {
     values := url.Values{}
@@ -150,6 +166,26 @@ func (c *Controller) SaveErrors() {
 
     http.SetCookie(c.rw, &http.Cookie{Name: "AMBER_ERRORS", Value: values.Encode(), Secure: false, HttpOnly: true, Path: "/"})
   }
+}
+
+func (c *Controller) GetCookieValues(name string) url.Values {
+  if cookie, err := c.Req.Cookie(name); err == nil {
+    if values, err := url.ParseQuery(cookie.Value); err == nil {
+      return values
+    }
+  }
+  return nil
+}
+
+func (c *Controller) DeleteCookie(name string) {
+  if cookie, err := c.Req.Cookie(name); err == nil {
+    cookie.MaxAge = -9999
+    http.SetCookie(c.rw, cookie)
+  }
+}
+
+func (c *Controller) SaveSessionCookie(value url.Values) {
+  http.SetCookie(c.rw, &http.Cookie{Name: "AMBER_SESSION", Value: value.Encode(), Secure: false, HttpOnly: true, Path: "/"}) 
 }
 
 func (c *Controller) Redirect(name string) {

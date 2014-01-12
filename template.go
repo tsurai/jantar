@@ -85,7 +85,7 @@ func (tm *templateManager) loadTemplates() {
 
       // add the current directory to the watcher
       if err = tm.watcher.Watch(path); err != nil {
-        logger.Println("[Warning] Can't watch directory %s. %s", path, err.Error())
+        logger.Printf("[Warning] Can't watch directory %s. %s\n", path, err.Error())
       }
       return nil
     }
@@ -107,7 +107,7 @@ func (tm *templateManager) loadTemplates() {
       }
 
       if err != nil {
-        logger.Println("![Warning]! Failed to parse template " + tmplName + ". " + err.Error())
+        logger.Println("[Warning] Failed to parse template " + tmplName + ". " + err.Error())
         return nil
       }
     }

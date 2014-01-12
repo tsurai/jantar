@@ -41,6 +41,10 @@ func (ctx *context) callHandler() {
 	c := newController(ctx)
 	in = append(in, reflect.ValueOf(c))
 
+	if f, ok := reflect.TypeOf(c).MethodByName("BeforeInterceptor"); ok {
+		f.Func.Call([]reflect.Value{reflect.ValueOf(c)})
+	}
+
 	// TODO: catch exception
 	ret := reflect.ValueOf(ctx.handler).Call(in)
 	if len(ret) > 0 {
