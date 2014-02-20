@@ -1,6 +1,6 @@
 # Amber
 
-Amber is a very minimalist mvc web framework written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini) and [Revel](https://github.com/robfig/revel).
+Amber is a very minimalist mvc web framework written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini).
 
 ## Getting Started
 
@@ -14,15 +14,16 @@ Now you can import amber and create a simple website
 package main
 
 import (
+	"net/http"
 	"github.com/tsurai/amber"
 )
 
 func main() {
 	a := amber.New()
 
-	a.AddRoute("GET", "/, func() string {
-		return "Hello World"
-	})
+  a.AddRoute("GET", "/", func(respw http.ResponseWriter, req *http.Request) {
+    respw.Write([]byte("Hello World"))
+  })
 
 	a.Run()
 }
@@ -82,9 +83,9 @@ func main() {
 ```
 
 ## Todo List
-- proper error handling
-- models & db interfaces
-- middleware
+- ~~proper error handling~~
+- ~~models & db interfaces~~
+- ~~middleware~~
 - ~~convert post data to struct~~
 - flexible configurations
 

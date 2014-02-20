@@ -1,5 +1,6 @@
 package amber
 
+
 import (
   "os"
   "fmt"
@@ -7,18 +8,13 @@ import (
   "strings"
   "regexp"
   "net/http"
-  "reflect"
-  "runtime"
+  "amber/context"
 )
 
 type route struct {
   pattern         string
   method          string
-  isController    bool
-  controllerType  reflect.Type
-  cName           string
-  cAction         string
-  handler         interface{}
+  handler         http.HandlerFunc
   router          *router
   regex           *regexp.Regexp
 }
@@ -35,39 +31,31 @@ func newRouter(hostname string, port uint) *router {
   return &router{hostname: hostname, port: strconv.FormatUint(uint64(port), 10), namedRoutes: make(map[string]*route)}
 }
 
-func (r *router) AddRoute(method string, pattern string, handler Handler) *route {
-  route := newRoute(method, pattern, handler, r)
-  if route.isController {
-    route.Name(route.cName + "#" + route.cAction)
-    r.routes = append(r.routes, route)
-
-    return route
-  }
-
-  return nil
-}
-
-func (r *router) AddRouteFunc(method string, pattern string, handler func(http.ResponseWriter, *http.Request)) * route {
+func (r *router) AddRoute(method string, pattern string, handler http.HandlerFunc) *route {
   route := newRoute(method, pattern, handler, r)
   r.routes = append(r.routes, route)
 
   return route
 }
 
-func (r *router) searchRoute(method string, request string) (*route, Param) {
+func (r *router) searchRoute(req *http.Request) *route {
+  method := req.Method
+  request := req.RequestURI
+
   for i, route := range r.routes {
     if route.method == method || method == "Any" {
       matches := route.regex.FindStringSubmatch(request)
       if len(matches) > 0 && matches[0] == request {
-        params := make(Param)
+        params := make(map[string]string)
         for i := 1; i < len(matches)-1; i++ {
           params[route.regex.SubexpNames()[i]] = matches[i]
         }
-        return r.routes[i], params
+        context.Set(req, "UrlParam", params)
+        return r.routes[i]
       }
     }
   }
-  return nil, nil
+  return nil
 }
 
 func (r *router) getReverseUrl(name string, param []interface{}) string {
@@ -76,11 +64,11 @@ func (r *router) getReverseUrl(name string, param []interface{}) string {
   
   if route != nil {
     i := -1
-    regex := regexp.MustCompile("{.*}")
+    regex := regexp.MustCompile("{[^/{}]+}")
     url := regex.ReplaceAllStringFunc(route.pattern, func(str string) string {
       i = i + 1
-      if i <= nParam - 1 {
-        return param[i].(string)
+      if i < nParam {
+        return fmt.Sprintf("%v", param[i])
       } else {
         return ""
       }
@@ -106,33 +94,14 @@ func (r *router) getNamedRoute(name string) *route {
 }
 
 // Route functions ---------------------------------------------
-func newRoute(method string, pattern string, handler Handler, router *router) *route {
+func newRoute(method string, pattern string, handler http.HandlerFunc, router *router) *route {
   regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
   regexPattern := regex.ReplaceAllStringFunc(pattern, func(s string) string {
-    return fmt.Sprintf("(?P<%s>[a-zA-Z0-9]+)", s[1:len(s)-1])
+    return fmt.Sprintf("(?P<%s>[^/]+)", s[1:len(s)-1])
   })
-  regexPattern = regexPattern + "(\\?.*)?"
+  regexPattern = regexPattern + "/?(\\?.*)?"
 
-  cName := ""
-  cAction := ""
-  isController := false
-  var controllerType reflect.Type
-
-  if ok, t := isControllerHandler(handler); ok {
-    var fn *runtime.Func
-    if fn = runtime.FuncForPC(reflect.ValueOf(handler).Pointer()); fn == nil {
-      logger.Println("![Warning]! Failed to add route. Can't fetch controller function")
-      return nil
-    }
-
-    controllerType = t
-    isController = true
-    token := strings.Split(fn.Name(), ".")
-    cName = token[1][2:len(token[1])-1]
-    cAction = token[2]
-  }
-  
-  return &route{pattern, method, isController, controllerType, cName, cAction, handler, router, regexp.MustCompile(regexPattern)}
+  return &route{pattern, method, handler, router, regexp.MustCompile(regexPattern)}
 }
 
 func (r *route) Name(name string) {

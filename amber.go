@@ -5,74 +5,82 @@ import (
   "log"
   "fmt"
   "time"
-  "reflect"
   "net/http"
+  "amber/context"
 )
 
-type Handler interface{}
-type Param map[string]string
-
-var logger *log.Logger
+var (
+  logger *log.Logger
+)
 
 type Amber struct {
-  hostname  string
-  port      uint
-  handlers  []http.Handler
-  tm        *templateManager
+  hostname    string
+  port        uint
+  middleware  []IMiddleware
+  tm          *TemplateManager
   *router
 }
 
 func New(hostname string, port uint) *Amber {
   router := newRouter(hostname, port)
-
+  
   a := &Amber{
     hostname: hostname,
     port: port,
-    tm: newTemplateManager("views", router),
+    tm: newTemplateManager("views"),
     router: router,
+    middleware: nil,
   }
 
   logger = log.New(os.Stdout, "[amber] ", 0)
-  a.tm.loadTemplates()
+  context.SetGlobal("TemplateManager", a.tm)
+  context.SetGlobal("Router", a.router)
 
-  a.AddRouteFunc("GET", "/public/.+", servePublic)
+  a.AddRoute("GET", "/public/.+", servePublic)
 
   return a
 }
 
-func (a *Amber) AddModule(config interface{}) {
-  var err error
-
-  switch reflect.TypeOf(config) {
-  case reflect.TypeOf(&MailerConfig{}):
-    err = Mailer.initialize(a.tm, config.(*MailerConfig))
-  case reflect.TypeOf(&DatabaseConfig{}):
-    err = DB.initialize(config.(*DatabaseConfig))
+func (a *Amber) AddMiddleware(mware IMiddleware) {
+  if len(a.middleware) > 0 {
+    a.middleware[len(a.middleware)-1].setNext(&mware)
   }
+  a.middleware = append(a.middleware, mware)
+}
 
-  if err != nil {
-    logger.Fatal("[Fatal]", err)
+func (a *Amber) initMiddleware() {
+  for _, mw := range a.middleware {
+    mw.Initialize()
   }
 }
 
-func (a *Amber) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
   t0 := time.Now()
+
   logger.Printf("%s %s", req.Method, req.RequestURI)
-
-  if route, param := a.searchRoute(req.Method, req.RequestURI); route != nil {
-    if route.isController {
-      newContext(route.handler, route, rw, req, a.tm, param).callHandler()
-    } else {
-      route.handler.(func(http.ResponseWriter, *http.Request))(rw, req)
+  
+  if route := a.searchRoute(req); route != nil {
+    for _, mw := range a.middleware {
+      mw.Call(respw, req)
+      if mw.doesYield() {
+        break
+      }
     }
+    route.handler(respw, req)
   } else {
-    http.NotFound(rw, req)
+    logger.Printf("404 Not Found")
+    http.NotFound(respw, req)
   }
-
-  logger.Printf("Completed in %v", time.Since(t0))  
+  logger.Printf("Completed in %v", time.Since(t0))
 }
 
 func (a *Amber) Run() {
+  a.initMiddleware()
+
+  if err := a.tm.loadTemplates(); err != nil {
+    logger.Fatal("[Fatal]", err)
+  }
+  
   logger.Println("Starting server & listening on port", a.port)
   logger.Fatal("[Fatal]", http.ListenAndServe(fmt.Sprintf(":%d", a.port), a))
 }

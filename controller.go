@@ -1,40 +1,126 @@
 package amber
 
 import (
-  "fmt"
   "strings"
+  "runtime"
   "reflect"
   "net/http"
-  "net/url"
-  "html/template"
+  "amber/context"
 )
 
 type IController interface {
-  Redirect(name string)
+  setInternal(rw http.ResponseWriter, r *http.Request, name string, action string)
   Render()
 }
 
 type Controller struct {
-  *context
+  Respw   http.ResponseWriter
+  Req     *http.Request
+  name    string
+  action  string
+}
+
+func newController(t reflect.Type, respw http.ResponseWriter, req *http.Request, name string, action string) IController {
+  c := reflect.New(t).Interface().(IController)
+  c.setInternal(respw, req, name, action)
+
+  return c
+}
+
+func getControllerType(handler interface{}) reflect.Type {
+  t := reflect.TypeOf(handler)
+  if t.Kind() == reflect.Func && t.NumIn() != 0 && t.In(0).Implements(reflect.TypeOf((*IController)(nil)).Elem()) {
+    return t.In(0).Elem()
+  }
+
+  logger.Fatalf("[Fatal] Handler is no valid controller function '%v'", t)
+  return nil
+}
+
+
+func CallController(ctrlFunc interface{}) (func(rw http.ResponseWriter, r *http.Request)) {
+  t := getControllerType(ctrlFunc)
+
+  fn := runtime.FuncForPC(reflect.ValueOf(ctrlFunc).Pointer());
+  if fn == nil {
+    logger.Fatal("[Fatal] Failed to add route. Can't fetch controller function")
+  }
+
+  token := strings.Split(fn.Name(), ".")
+  cName := token[1][2:len(token[1])-1]
+  cAction := token[2]
+  
+  return func(rw http.ResponseWriter, r *http.Request) {
+    c := newController(t, rw, r, cName, cAction)
+
+    var in []reflect.Value
+    in = append(in, reflect.ValueOf(c))
+
+    reflect.ValueOf(ctrlFunc).Call(in)
+  }
+}
+
+func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, name string, action string) {
+  c.Respw = respw
+  c.Req = req
+  c.name = name
+  c.action = action
+}
+
+func (c *Controller) Render() {
+  tm := context.GetGlobal("TemplateManager").(*TemplateManager)
+  
+  tmplName := c.name + "/" + c.action + ".html"
+
+  args := make(map[string]interface{})
+  args["csrf"] = context.Get(c.Req, "csrf");
+  
+  if err := tm.RenderTemplate(c.Respw, tmplName, args); err != nil {
+    logger.Println(err.Error())
+  }
+}
+/*
+func CallHandler(rw http.ResponseWriter, r *http.Request) {
+  var in []reflect.Value
+
+  c := newController(rw, r)
+  in = append(in, reflect.ValueOf(c))
+
+  if f, ok := reflect.TypeOf(c).MethodByName("BeforeInterceptor"); ok {
+    f.Func.Call([]reflect.Value{reflect.ValueOf(c)})
+  }
+
+  // TODO: catch exception
+  ret := reflect.ValueOf(ctx.handler).Call(in)
+  if len(ret) > 0 {
+    ctx.rw.Write([]byte(ret[0].String()))
+  }
+}
+
+/*
+type IController interface {
+  Render()
+}
+
+type Controller struct {
+  *Context
   *Validation
   Session     map[string]string
   flash       map[string]string
-  alert       map[string]template.HTML
-  RenderArgs  map[string]interface{}
+  alert       map[string]string
 }
 
-func newController(ctx *context) interface{} {
+func newController(ctx *Context) interface{} {
   con := reflect.New(ctx.route.controllerType)
   con.Elem().Field(0).Set(reflect.ValueOf(new(Controller)))
 
   base := con.Elem().Field(0).Interface().(*Controller)
-  base.context = ctx
+  base.Context = ctx
   base.Validation = &Validation{}
   base.Validation.errors = make(map[string][]string)
-  base.RenderArgs = make(map[string]interface{})
   base.Session = make(map[string]string)
   base.flash = make(map[string]string)
-  base.alert = make(map[string]template.HTML)
+  base.alert = make(map[string]string)
 
   // fetch validation errors from cookie
 
@@ -65,7 +151,7 @@ func newController(ctx *context) interface{} {
   if cookie, err := ctx.Req.Cookie("AMBER_ALERT"); err == nil {
     if m, err := url.ParseQuery(cookie.Value); err == nil {
       for key, val := range m {
-        base.alert[key] = template.HTML(val[0])
+        base.alert[key] = val[0]
       }
     }
 
@@ -98,7 +184,7 @@ func isControllerHandler(handler Handler) (bool, reflect.Type) {
 // WARNING: this is case sensitive! Using the wrong case in the html form can cause misbehavior
 func (c *Controller) ExtractObject(name string, obj interface{}) interface{} {
   if len(c.PostParam) <= 0 {
-    logger.Println("![Warning]! Failed to parse post data. Data is nil")
+    logger.Println("[Warning] Failed to parse post data. Data is nil")
     return nil
   }
 
@@ -188,8 +274,14 @@ func (c *Controller) SaveSessionCookie(value url.Values) {
   http.SetCookie(c.rw, &http.Cookie{Name: "AMBER_SESSION", Value: value.Encode(), Secure: false, HttpOnly: true, Path: "/"}) 
 }
 
-func (c *Controller) Redirect(name string) {
-  url := c.route.router.getReverseUrl(name, nil)
+func (c *Controller) Redirect(name string, args ...interface{}) {
+  url := c.route.router.getReverseUrl(name, args)
+  c.rw.Header().Set("Location", url)
+  c.rw.WriteHeader(302)
+}
+
+// stupid name....
+func (c *Controller) HardRedirect(url string) {
   c.rw.Header().Set("Location", url)
   c.rw.WriteHeader(302)
 }
@@ -207,8 +299,8 @@ func (c *Controller) Render() {
 
   if tmpl == nil {
     c.rw.Write([]byte("Can't find template " + tmplName))
-    logger.Println("![Warning]! Can't find template ", tmplName)
+    logger.Println("[Warning] Can't find template ", tmplName)
   } else if err := tmpl.Execute(c.rw, c.RenderArgs); err != nil {
-    logger.Println("![Warning]! Failed to render template:", err.Error())
+    logger.Println("[Warning] Failed to render template:", err.Error())
   }
-}
+}*/
