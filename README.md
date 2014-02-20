@@ -50,7 +50,7 @@ import (
 )
 
 type App struct {
-  *amber.Controller
+  amber.Controller
 }
 
 func (c *App) Index() {
@@ -75,7 +75,7 @@ import (
 func main() {
 	a := amber.New()
 
-	a.AddRoute("GET", "/", (*c.App).Index)
+	a.AddRoute("GET", "/", amber.CallController((*c.App).Index))
 
 	a.Run()
 }
