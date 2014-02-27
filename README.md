@@ -1,6 +1,9 @@
-# Amber
+# Amber [![GoDoc](https://godoc.org/github.com/tsurai/amber?status.png)](http://godoc.org/github.com/tsurai/amber)
 
 Amber is a very minimalist mvc web framework written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini).
+
+## Current State
+Amber is currently getting completly redesigned and is not usable right now.
 
 ## Getting Started
 

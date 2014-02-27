@@ -6,9 +6,9 @@ import (
 )
 
 var (
-  HookDuplicateId     = errors.New("Id already in use")
-  HookUnknownId       = errors.New("Unknown hook Id")
-  HookInvalidHandler  = errors.New("Handler is not a function")
+  ErrHookDuplicateID     = errors.New("id already in use")
+  ErrHookUnknownID       = errors.New("unknown hook Id")
+  ErrHookInvalidHandler  = errors.New("handler is not a function")
 )
 
 type hooks struct {
@@ -16,22 +16,22 @@ type hooks struct {
   handler map[int][]interface{}
 }
 
-func (h *hooks) registerHookId(hookId int) error {
+func (h *hooks) registerHookID(hookID int) error {
   if h.handler == nil {
     h.handler = make(map[int][]interface{})
   }
 
-  if h.isKnownId(hookId) {
-    return HookDuplicateId
+  if h.isKnownID(hookID) {
+    return ErrHookDuplicateID
   }
 
-  h.ids = append(h.ids, hookId)
+  h.ids = append(h.ids, hookID)
 
   return nil
 }
 
-func (h *hooks) getHooks(hookId int) []interface{} {
-  handler, ok := h.handler[hookId]
+func (h *hooks) getHooks(hookID int) []interface{} {
+  handler, ok := h.handler[hookID]
   if !ok {
     return nil
   }
@@ -39,22 +39,22 @@ func (h *hooks) getHooks(hookId int) []interface{} {
   return handler
 }
 
-func (h *hooks) AddHook(hookId int, handler interface{}) error {
-  if !h.isKnownId(hookId) {
-    return HookUnknownId
+func (h *hooks) AddHook(hookID int, handler interface{}) error {
+  if !h.isKnownID(hookID) {
+    return ErrHookUnknownID
   }
 
   if reflect.TypeOf(handler).Kind() != reflect.Func {
-    return HookInvalidHandler
+    return ErrHookInvalidHandler
   }
 
-  h.handler[hookId] = append(h.handler[hookId], handler)
+  h.handler[hookID] = append(h.handler[hookID], handler)
   return nil
 }
 
-func (h *hooks) isKnownId(hookId int) bool {
+func (h *hooks) isKnownID(hookID int) bool {
   for _, id := range h.ids {
-    if id == hookId {
+    if id == hookID {
       return true
     }
   }

@@ -1,9 +1,12 @@
 package middleware
 
 import(
+  "os"
+  "io"
+  "fmt"
   "amber"
   "amber/context"
-  "regexp"
+  "strings"
   "net/http"
   "html/template"
   "crypto/hmac"
@@ -13,20 +16,28 @@ import(
 )
 
 var (
-  secretkey []byte
+  secretKey []byte
 )
 
 const (
-  field_name = "csrf"
-  secret_length = 32
+  secretLength = 32
 )
 
+// Csrf is a Middleware that protects against cross-side request forgery
 type Csrf struct {
   amber.Middleware
+  // BlockingRandom determines whether to use /dev/urandom or /dev/random on unix systems
+  BlockingRandom bool
 }
 
+func noAccess(respw http.ResponseWriter, req *http.Request) {
+  http.Error(respw, "400 bad request", 400)
+}
+
+// Initialize prepares Csrf for usage
+// Note: Do not call this yourself
 func (c *Csrf) Initialize() {
-  generateSecretKey()
+  generateSecretKey(c.BlockingRandom)
 
   // add all hooks to TemplateManger
   tm := context.GetGlobal("TemplateManager").(*amber.TemplateManager)
@@ -34,88 +45,87 @@ func (c *Csrf) Initialize() {
     panic("[Fatal] Failed to get template manager")
   }
 
-  if err := tm.AddHook(amber.TM_BEFORE_PARSE, beforeParseHook); err != nil {
+  tm.AddTmplFunc("csrfToken", func() string { return "" })
+
+  if err := tm.AddHook(amber.TmBeforeParse, beforeParseHook); err != nil {
     panic(err)
   }
 
-  if err := tm.AddHook(amber.TM_BEFORE_RENDER, beforeRenderHook); err != nil {
+  if err := tm.AddHook(amber.TmBeforeRender, beforeRenderHook); err != nil {
     panic(err)
   }
 }
 
-func (c *Csrf) Name() string {
-  return "Csrf"
-}
-
-func (c *Csrf) Call(rw http.ResponseWriter, r *http.Request) {
-  sessionId, foundSession := context.GetOk(r, "session_id")
+// Call executes the Middleware
+// Note: Do not call this yourself
+func (c *Csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
+  sessionID, foundSession := context.GetOk(req, "session_id")
   if !foundSession {
-    // proceed to handler
-    return
+    return true
   }
- 
-  tokenString := r.PostFormValue(field_name)
+
+  tokenString := req.PostFormValue("_csrf-token")
   if tokenString == "" {
-    context.Set(r, field_name, base64.StdEncoding.EncodeToString(generateToken(sessionId.(string))))
+    context.Set(req, "_csrf", base64.StdEncoding.EncodeToString(generateToken(sessionID.(string))))
+    return true
   }
 
-  if r.Method == "GET" || r.Method == "HEAD" {
-    return
+  if req.Method == "GET" || req.Method == "HEAD" {
+    return true
   }
-
-  /*if r.URL.Scheme == "https" {
-    do same origin check
-  }*/
 
   token, _ := base64.StdEncoding.DecodeString(tokenString)
-  if hmac.Equal(token, generateToken(sessionId.(string))) {
-    // proceed to handler
-    return
+  if hmac.Equal(token, generateToken(sessionID.(string))) {
+    return true
   }
 
-  // show error
-  rw.WriteHeader(400)
-  rw.Write([]byte("CSRF"))
+  /* TODO: use error handler as parameter */
+  noAccess(respw, req)
+  fmt.Println("CSRF Detected! IP:", req.RemoteAddr)
+
+  /* log ip etc pp */
+  return false
 }
 
-func generateSecretKey() {
-  secretkey := make([]byte, secret_length)
+func generateSecretKey(blocking bool) {
+  secretKey = make([]byte, secretLength)
   
-/*
-  if file, err := os.Open("/dev/random"); err == nil {
-    if n, err := io.ReadAtLeast(file, secretkey, secret_length); n == secret_length && err == nil {
-      return
+  if blocking {
+    if file, err := os.Open("/dev/random"); err == nil {
+      if n, err := io.ReadAtLeast(file, secretKey, secretLength); n == secretLength && err == nil {
+        return
+      }
     }
   }
-*/
 
-  if n, err := rand.Read(secretkey); n != secret_length || err != nil {
+  if n, err := rand.Read(secretKey); n != secretLength || err != nil {
     panic("[Fatal] Failed to generate secret key.")
   }
 }
 
-func generateToken(sessionId string) []byte {
-  mac := hmac.New(sha512.New, secretkey)
-  mac.Write([]byte(sessionId))
-
+func generateToken(sessionID string) []byte {
+  mac := hmac.New(sha512.New, secretKey)
+  mac.Write([]byte(sessionID))
+  
   return mac.Sum(nil)
 }
 
 func beforeParseHook(tm *amber.TemplateManager, name string, data *[]byte) {
   tmplData := string(*data)
 
-  regex := regexp.MustCompile("(?i:<form .* method=(\"|')(POST|PUT|DELETE)(\"|').*>)")
-  tmplData = regex.ReplaceAllStringFunc(tmplData, func(match string) string {
-    return match+"<input type='hidden' name='" + field_name + "' value='{{" + field_name + "}}'>"
-  })
-
-  *data = []byte(tmplData)
+  offset := strings.Index(tmplData, "<head>")
+  if offset != -1 {
+    tmplData = tmplData[:offset+6]+"<meta name=\"csrf-token\" content=\"{{csrfToken}}\">"+tmplData[offset+6:]
+    *data = []byte(tmplData)
+  }
 }
 
-func beforeRenderHook(tm *amber.TemplateManager, tmpl *template.Template, args map[string]interface{}) {
-  tmpl = tmpl.Funcs(template.FuncMap{
-    "csrf": func() string {
-      return args[field_name].(string)
-    },
-  })
+func beforeRenderHook(req *http.Request, tm *amber.TemplateManager, tmpl *template.Template, args map[string]interface{}) {
+  if token, ok := context.GetOk(req, "_csrf"); ok {
+    tmpl = tmpl.Funcs(template.FuncMap{
+      "csrfToken": func() string {
+        return token.(string)
+      },
+    })
+  }
 }

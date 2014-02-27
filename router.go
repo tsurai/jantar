@@ -2,21 +2,25 @@ package amber
 
 
 import (
+  "amber/context"
   "os"
   "fmt"
   "strconv"
   "strings"
   "regexp"
+  "reflect"
+  "runtime"
   "net/http"
-  "amber/context"
 )
 
 type route struct {
+  cName           string
+  cAction         string
   pattern         string
   method          string
   handler         http.HandlerFunc
-  router          *router
   regex           *regexp.Regexp
+  router          *router
 }
 
 type router struct {
@@ -31,25 +35,34 @@ func newRouter(hostname string, port uint) *router {
   return &router{hostname: hostname, port: strconv.FormatUint(uint64(port), 10), namedRoutes: make(map[string]*route)}
 }
 
-func (r *router) AddRoute(method string, pattern string, handler http.HandlerFunc) *route {
-  route := newRoute(method, pattern, handler, r)
+func (r *router) AddRoute(method string, pattern string, handler interface{}) *route {
+  route := newRoute(strings.ToUpper(method), pattern, handler, r)
   r.routes = append(r.routes, route)
+
+  // is route a controller route
+  if route.cName != "" {
+    // add to named routes with name as controller#action
+    r.namedRoutes[strings.ToLower(route.cName+"#"+route.cAction)] = route
+  }
 
   return route
 }
 
 func (r *router) searchRoute(req *http.Request) *route {
-  method := req.Method
+  method := strings.ToUpper(req.Method)
   request := req.RequestURI
 
   for i, route := range r.routes {
-    if route.method == method || method == "Any" {
+    if route.method == method || method == "ANY" {
       matches := route.regex.FindStringSubmatch(request)
+      
       if len(matches) > 0 && matches[0] == request {
         params := make(map[string]string)
-        for i := 1; i < len(matches)-1; i++ {
-          params[route.regex.SubexpNames()[i]] = matches[i]
+        
+        for n := 1; n < len(matches)-1; n++ {
+          params[route.regex.SubexpNames()[n]] = matches[i]
         }
+        
         context.Set(req, "UrlParam", params)
         return r.routes[i]
       }
@@ -69,24 +82,21 @@ func (r *router) getReverseUrl(name string, param []interface{}) string {
       i = i + 1
       if i < nParam {
         return fmt.Sprintf("%v", param[i])
-      } else {
-        return ""
       }
+      return ""
     })
 
     if r.port != "80" || r.port != "8080" {
       return "http://" + r.hostname + ":" + r.port + url
-    } else {
-      return "http://" + r.hostname + url
     }
+    return "http://" + r.hostname + url
   }
 
   return ""
 }
 
 func (r *router) getNamedRoute(name string) *route {
-  route, ok := r.namedRoutes[strings.ToLower(name)]
-  if ok {
+  if route, ok := r.namedRoutes[strings.ToLower(name)]; ok {
     return route
   }
   
@@ -94,14 +104,41 @@ func (r *router) getNamedRoute(name string) *route {
 }
 
 // Route functions ---------------------------------------------
-func newRoute(method string, pattern string, handler http.HandlerFunc, router *router) *route {
+func newRoute(method string, pattern string, handler interface{}, router *router) *route {
+  var finalFunc http.HandlerFunc
+  cName := ""
+  cAction := ""
+
+  if reflect.TypeOf(handler) == reflect.TypeOf(http.NotFound) {
+    finalFunc = handler.(func(http.ResponseWriter, *http.Request))
+  } else if cType := getControllerType(handler); cType != nil {
+    fn := runtime.FuncForPC(reflect.ValueOf(handler).Pointer())
+    if fn == nil {
+      logger.Println("[Warning] Failed to add route. Can't fetch controller function")
+      return nil
+    }
+
+    token := strings.Split(fn.Name(), ".")
+    cName = token[1][2:len(token[1])-1]
+    cAction = token[2]
+
+    finalFunc = func(rw http.ResponseWriter, r *http.Request) {
+      c := newController(cType, rw, r, cName, cAction)
+
+      var in []reflect.Value
+      in = append(in, reflect.ValueOf(c))
+
+      reflect.ValueOf(handler).Call(in)
+    }
+  }
+
   regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
   regexPattern := regex.ReplaceAllStringFunc(pattern, func(s string) string {
     return fmt.Sprintf("(?P<%s>[^/]+)", s[1:len(s)-1])
   })
   regexPattern = regexPattern + "/?(\\?.*)?"
 
-  return &route{pattern, method, handler, router, regexp.MustCompile(regexPattern)}
+  return &route{cName, cAction, pattern, method, finalFunc, regexp.MustCompile(regexPattern), router}
 }
 
 func (r *route) Name(name string) {

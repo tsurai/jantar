@@ -7,24 +7,27 @@ import (
   "net/http"
 )
 
+// Session is a Middleware 
 type Session struct {
   amber.Middleware
+  // CookieName is the name of the cookie saving the sessionID
   CookieName string
 }
 
+// Initialize prepares the Middleware for usage
 func (s *Session) Initialize() {
   
 }
 
-func (s *Session) Name() string {
-  return "Session"
-}
-
-func (s *Session) Call(rw http.ResponseWriter, r *http.Request) {
+// Call executes the Middleware
+// Note: Do not call this yourself
+func (s *Session) Call(respw http.ResponseWriter, req *http.Request) bool {
   // fetch flash from cookie
-  if cookie, err := r.Cookie(s.CookieName); err == nil {
+  if cookie, err := req.Cookie(s.CookieName); err == nil {
     if m, err := url.ParseQuery(cookie.Value); err == nil {
-      context.Set(r, "session_id", m["id"][0])
+      context.Set(req, "session_id", m["id"][0])
     }
   }
+  
+  return true
 }

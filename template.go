@@ -1,6 +1,7 @@
 package amber
 
 import (
+  "amber/context"
   "os"
   "fmt"
   "time"
@@ -10,18 +11,18 @@ import (
   "io/ioutil"
   "path/filepath"
   "html/template"
-  "amber/context"
   "github.com/howeyc/fsnotify"
 )
 
 const (
-  // callback(tm *TemplateManager, name string, data string)
-  TM_BEFORE_PARSE = iota
-  // callback(tm *TemplateManager, tmpl *html.Template, args map[string]interface{})
-  TM_BEFORE_RENDER = iota
-  tm_last = iota
+  // TmBeforeParse is a hook with callback f(tm *TemplateManager, name string, data string)
+  TmBeforeParse = iota
+  // TmBeforeRender is a hook with callback f(req *http.Request, tm *TemplateManager, tmpl *html.Template, args map[string]interface{})
+  TmBeforeRender = iota
+  tmLast = iota
 )
 
+// TemplateManager is responsible for loading, watching and rendering templates
 type TemplateManager struct {
   hooks
   directory     string
@@ -32,9 +33,6 @@ type TemplateManager struct {
 
 func newTemplateManager(directory string) *TemplateManager {
   funcs := template.FuncMap{
-    "csrf": func() string {
-      return "dummy"
-    },
     "set": func(args map[string]interface{}, key string, value interface{}) string {
       if args != nil {
         args[key] = value
@@ -60,10 +58,10 @@ func newTemplateManager(directory string) *TemplateManager {
     "url": func(name string, args ...interface{}) string {
       router := context.GetGlobal("Router").(*router)
       return router.getReverseUrl(name, args)
-    },
+    },/*
     "flash": func(args map[string]interface{}, key string) string {
       return args["flash"].(map[string]string)[key]
-    },
+    },*/
     "since": func(t time.Time) string {
       seconds := int(time.Since(t).Seconds())
       if seconds < 60 {
@@ -84,11 +82,9 @@ func newTemplateManager(directory string) *TemplateManager {
         return "1 month ago"
       } else if seconds < 60 * 60 * 24 * 30 * 12 {
         return fmt.Sprintf("%d months ago", seconds / (60 * 60 * 24 * 30))
-      } else {
-        return "> 1 year ago"
       }
+      return "> 1 year ago"
     },
-    // FIXME: komisches zeugs
     "paginate": func(curPage int, nPages int, offset int, url string) template.HTML {
       if nPages < 2 {
         return template.HTML("")
@@ -130,8 +126,8 @@ func newTemplateManager(directory string) *TemplateManager {
   tm := &TemplateManager{directory: directory, tmplFuncs: funcs}
   
   // register hooks
-  for i := 0; i < tm_last; i++ {
-    if err := tm.registerHookId(i); err != nil {
+  for i := 0; i < tmLast; i++ {
+    if err := tm.registerHookID(i); err != nil {
       panic("Failed to register hook." + err.Error())
     }
   }
@@ -139,7 +135,7 @@ func newTemplateManager(directory string) *TemplateManager {
   return tm
 }
 
-// watcher listens for file events
+// watch listens for file events and reloads templates on changes
 func (tm *TemplateManager) watch() {
   for {
     select {
@@ -198,7 +194,7 @@ func (tm *TemplateManager) loadTemplates() error {
       tmplName := strings.Replace(strings.ToLower(path[len(tm.directory)+1:]), "\\", "/", -1)
       
       // call BEFORE_PARSE hooks
-      hooks := tm.getHooks(TM_BEFORE_PARSE)
+      hooks := tm.getHooks(TmBeforeParse)
       for _, hook := range hooks {
         hook.(func(*TemplateManager, string, *[]byte))(tm, tmplName, &fdata)
       }
@@ -233,16 +229,24 @@ func (tm *TemplateManager) getTemplate(name string) *template.Template {
   return tm.tmplList.Lookup(strings.ToLower(name))
 }
 
-func (tm *TemplateManager) RenderTemplate(respw http.ResponseWriter, name string, args map[string]interface{}) error {
+// AddTmplFunc adds a template function with a given name and function pointer.
+// Note: AddTmplFunc has no effect if called after the templates have been parsed.
+func (tm *TemplateManager) AddTmplFunc(name string, fn interface{}) {
+  tm.tmplFuncs[name] = fn
+}
+
+// RenderTemplate renders a template with the given name and arguments.
+// Note: A Controller should call its Render function instead.
+func (tm *TemplateManager) RenderTemplate(respw http.ResponseWriter, req *http.Request, name string, args map[string]interface{}) error {
   tmpl := tm.tmplList.Lookup(strings.ToLower(name))
   if tmpl == nil {
     return fmt.Errorf("[Warning] Can't find template '%s'", strings.ToLower(name))
   }
 
   // call BEFORE_RENDER hooks
-  hooks := tm.getHooks(TM_BEFORE_RENDER)
+  hooks := tm.getHooks(TmBeforeRender)
   for _, hook := range hooks {
-    hook.(func(*TemplateManager, *template.Template, map[string]interface{}))(tm, tmpl, args)
+    hook.(func(*http.Request, *TemplateManager, *template.Template, map[string]interface{}))(req, tm, tmpl, args)
   }
 
   if err := tmpl.Execute(respw, args); err != nil {
