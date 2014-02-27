@@ -7,7 +7,7 @@ import (
   "net/http"
 )
 
-// Session is a Middleware 
+// Session is a Middleware stub for user sessions
 type Session struct {
   amber.Middleware
   // CookieName is the name of the cookie saving the sessionID

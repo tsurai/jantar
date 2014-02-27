@@ -1,4 +1,4 @@
-// Amber is a minimalist mvc web framework written in golang.
+// Package amber is a minimalist mvc web framework written in golang.
 //
 // It has been largely inspired by [Martini](https://github.com/codegangsta/martini) but emphasizes performance over
 // syntactic sugar by avoiding unnecessary reflections.
