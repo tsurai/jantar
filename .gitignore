@@ -3,6 +3,7 @@
 *.a
 *.so
 .*.go
+.*
 
 # folders
 _test

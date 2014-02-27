@@ -1,26 +1,26 @@
 package amber
 
+
 import (
+  "amber/context"
   "os"
   "fmt"
   "strconv"
   "strings"
   "regexp"
-  "net/http"
   "reflect"
   "runtime"
+  "net/http"
 )
 
 type route struct {
-  pattern         string
-  method          string
-  isController    bool
-  controllerType  reflect.Type
   cName           string
   cAction         string
-  handler         interface{}
-  router          *router
+  pattern         string
+  method          string
+  handler         http.HandlerFunc
   regex           *regexp.Regexp
+  router          *router
 }
 
 type router struct {
@@ -35,39 +35,40 @@ func newRouter(hostname string, port uint) *router {
   return &router{hostname: hostname, port: strconv.FormatUint(uint64(port), 10), namedRoutes: make(map[string]*route)}
 }
 
-func (r *router) AddRoute(method string, pattern string, handler Handler) *route {
-  route := newRoute(method, pattern, handler, r)
-  if route.isController {
-    route.Name(route.cName + "#" + route.cAction)
-    r.routes = append(r.routes, route)
-
-    return route
-  }
-
-  return nil
-}
-
-func (r *router) AddRouteFunc(method string, pattern string, handler func(http.ResponseWriter, *http.Request)) * route {
-  route := newRoute(method, pattern, handler, r)
+func (r *router) AddRoute(method string, pattern string, handler interface{}) *route {
+  route := newRoute(strings.ToUpper(method), pattern, handler, r)
   r.routes = append(r.routes, route)
+
+  // is route a controller route
+  if route.cName != "" {
+    // add to named routes with name as controller#action
+    r.namedRoutes[strings.ToLower(route.cName+"#"+route.cAction)] = route
+  }
 
   return route
 }
 
-func (r *router) searchRoute(method string, request string) (*route, Param) {
+func (r *router) searchRoute(req *http.Request) *route {
+  method := strings.ToUpper(req.Method)
+  request := req.RequestURI
+
   for i, route := range r.routes {
-    if route.method == method || method == "Any" {
+    if route.method == method || method == "ANY" {
       matches := route.regex.FindStringSubmatch(request)
+      
       if len(matches) > 0 && matches[0] == request {
-        params := make(Param)
-        for i := 1; i < len(matches)-1; i++ {
-          params[route.regex.SubexpNames()[i]] = matches[i]
+        params := make(map[string]string)
+        
+        for n := 1; n < len(matches)-1; n++ {
+          params[route.regex.SubexpNames()[n]] = matches[i]
         }
-        return r.routes[i], params
+        
+        context.Set(req, "UrlParam", params)
+        return r.routes[i]
       }
     }
   }
-  return nil, nil
+  return nil
 }
 
 func (r *router) getReverseUrl(name string, param []interface{}) string {
@@ -76,29 +77,26 @@ func (r *router) getReverseUrl(name string, param []interface{}) string {
   
   if route != nil {
     i := -1
-    regex := regexp.MustCompile("{.*}")
+    regex := regexp.MustCompile("{[^/{}]+}")
     url := regex.ReplaceAllStringFunc(route.pattern, func(str string) string {
       i = i + 1
-      if i <= nParam - 1 {
-        return param[i].(string)
-      } else {
-        return ""
+      if i < nParam {
+        return fmt.Sprintf("%v", param[i])
       }
+      return ""
     })
 
     if r.port != "80" || r.port != "8080" {
       return "http://" + r.hostname + ":" + r.port + url
-    } else {
-      return "http://" + r.hostname + url
     }
+    return "http://" + r.hostname + url
   }
 
   return ""
 }
 
 func (r *router) getNamedRoute(name string) *route {
-  route, ok := r.namedRoutes[strings.ToLower(name)]
-  if ok {
+  if route, ok := r.namedRoutes[strings.ToLower(name)]; ok {
     return route
   }
   
@@ -106,33 +104,41 @@ func (r *router) getNamedRoute(name string) *route {
 }
 
 // Route functions ---------------------------------------------
-func newRoute(method string, pattern string, handler Handler, router *router) *route {
-  regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
-  regexPattern := regex.ReplaceAllStringFunc(pattern, func(s string) string {
-    return fmt.Sprintf("(?P<%s>[a-zA-Z0-9]+)", s[1:len(s)-1])
-  })
-  regexPattern = regexPattern + "(\\?.*)?"
-
+func newRoute(method string, pattern string, handler interface{}, router *router) *route {
+  var finalFunc http.HandlerFunc
   cName := ""
   cAction := ""
-  isController := false
-  var controllerType reflect.Type
 
-  if ok, t := isControllerHandler(handler); ok {
-    var fn *runtime.Func
-    if fn = runtime.FuncForPC(reflect.ValueOf(handler).Pointer()); fn == nil {
-      logger.Println("![Warning]! Failed to add route. Can't fetch controller function")
+  if reflect.TypeOf(handler) == reflect.TypeOf(http.NotFound) {
+    finalFunc = handler.(func(http.ResponseWriter, *http.Request))
+  } else if cType := getControllerType(handler); cType != nil {
+    fn := runtime.FuncForPC(reflect.ValueOf(handler).Pointer())
+    if fn == nil {
+      logger.Println("[Warning] Failed to add route. Can't fetch controller function")
       return nil
     }
 
-    controllerType = t
-    isController = true
     token := strings.Split(fn.Name(), ".")
     cName = token[1][2:len(token[1])-1]
     cAction = token[2]
+
+    finalFunc = func(rw http.ResponseWriter, r *http.Request) {
+      c := newController(cType, rw, r, cName, cAction)
+
+      var in []reflect.Value
+      in = append(in, reflect.ValueOf(c))
+
+      reflect.ValueOf(handler).Call(in)
+    }
   }
-  
-  return &route{pattern, method, isController, controllerType, cName, cAction, handler, router, regexp.MustCompile(regexPattern)}
+
+  regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
+  regexPattern := regex.ReplaceAllStringFunc(pattern, func(s string) string {
+    return fmt.Sprintf("(?P<%s>[^/]+)", s[1:len(s)-1])
+  })
+  regexPattern = regexPattern + "/?(\\?.*)?"
+
+  return &route{cName, cAction, pattern, method, finalFunc, regexp.MustCompile(regexPattern), router}
 }
 
 func (r *route) Name(name string) {
