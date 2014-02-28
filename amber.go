@@ -1,6 +1,6 @@
 // Package amber is a minimalist mvc web framework written in golang.
 //
-// It has been largely inspired by [Martini](https://github.com/codegangsta/martini) but emphasizes performance over
+// It has been largely inspired by Martini(https://github.com/codegangsta/martini) but emphasizes performance over
 // syntactic sugar by avoiding unnecessary reflections.
 //
 // While trying to be slim amber provides a number of security features out of the box to avoid common security vulnerabilities.
