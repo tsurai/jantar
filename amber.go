@@ -12,6 +12,7 @@ import (
   "log"
   "fmt"
   "time"
+  "strings"
   "net/http"
 )
 
@@ -78,6 +79,27 @@ func (a *Amber) callMiddleware(respw http.ResponseWriter, req *http.Request) boo
 
 func (a *Amber) AddRoute(method string, pattern string, handler interface{}) *route {
   return a.router.addRoute(method, pattern, handler)
+}
+
+func servePublic(rw http.ResponseWriter, req *http.Request) {
+  var file http.File
+  var err error
+  var stat os.FileInfo
+  fname := req.URL.Path[len("/public/"):]
+
+  if !strings.HasPrefix(fname, ".") {
+    if file, err = http.Dir("public").Open(fname); err == nil {
+      if stat, err = file.Stat(); err == nil {
+        if !stat.IsDir() {
+          http.ServeContent(rw, req, req.URL.Path, stat.ModTime(), file)
+          file.Close()
+          return
+        }
+      }
+    }
+  }
+
+  http.NotFound(rw, req)
 }
 
 // ServeHTTP implements the http.Handler interface

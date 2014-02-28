@@ -115,7 +115,8 @@ func beforeParseHook(tm *amber.TemplateManager, name string, data *[]byte) {
 
   offset := strings.Index(tmplData, "<head>")
   if offset != -1 {
-    tmplData = tmplData[:offset+6]+"<meta name=\"csrf-token\" content=\"{{csrfToken}}\">"+tmplData[offset+6:]
+    tmplData = tmplData[:offset+6]+"<meta name=\"csrf-token\" content=\"{{csrfToken}}\">\n" +
+    "<script src=\"https://raw.github.com/tsurai/amber/master/js/amber.js\" type=\"text/javascript\" charset=\"utf-8\">"+tmplData[offset+6:]
     *data = []byte(tmplData)
   }
 }

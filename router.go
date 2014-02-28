@@ -3,7 +3,6 @@ package amber
 
 import (
   "github.com/tsurai/amber/context"
-  "os"
   "fmt"
   "strconv"
   "strings"
@@ -119,7 +118,7 @@ func newRoute(method string, pattern string, handler interface{}) *route {
 
     regex := regexp.MustCompile(".*\\.\\(\\*(.*)\\)\\.(.*)")
     matches := regex.FindStringSubmatch(fn.Name())
-    
+
     if len(matches) == 3 && matches[0] == fn.Name() {
       cName = matches[1]
       cAction = matches[2]
@@ -147,25 +146,4 @@ func newRoute(method string, pattern string, handler interface{}) *route {
 func (r *route) Name(name string) {
   router := context.GetGlobal("Router").(*router)
   router.namedRoutes[strings.ToLower(name)] = r
-}
-
-func servePublic(rw http.ResponseWriter, req *http.Request) {
-  var file http.File
-  var err error
-  var stat os.FileInfo
-  fname := req.URL.Path[len("/public/"):]
-
-  if !strings.HasPrefix(fname, ".") {
-    if file, err = http.Dir("public").Open(fname); err == nil {
-      if stat, err = file.Stat(); err == nil {
-        if !stat.IsDir() {
-          http.ServeContent(rw, req, req.URL.Path, stat.ModTime(), file)
-          file.Close()
-          return
-        }
-      }
-    }
-  }
-
-  http.NotFound(rw, req)
 }
