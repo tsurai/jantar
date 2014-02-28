@@ -117,10 +117,14 @@ func newRoute(method string, pattern string, handler interface{}) *route {
       return nil
     }
 
-    token := strings.Split(fn.Name(), ".")
-    cName = token[1][2:len(token[1])-1]
-    cAction = token[2]
-
+    regex := regexp.MustCompile(".*\\.\\(\\*(.*)\\)\\.(.*)")
+    matches := regex.FindStringSubmatch(fn.Name())
+    
+    if len(matches) == 3 && matches[0] == fn.Name() {
+      cName = matches[1]
+      cAction = matches[2]
+    }
+    
     finalFunc = func(rw http.ResponseWriter, r *http.Request) {
       c := newController(cType, rw, r, cName, cAction)
 
