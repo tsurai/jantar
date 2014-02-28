@@ -81,6 +81,11 @@ func (a *Amber) AddRoute(method string, pattern string, handler interface{}) *ro
   return a.router.addRoute(method, pattern, handler)
 }
 
+
+func (a *Amber) setSecurityHeader(header http.Header) {
+  header.Add("X-Content-Type-Options", "nosniff")
+}
+
 func servePublic(rw http.ResponseWriter, req *http.Request) {
   var file http.File
   var err error
@@ -120,6 +125,8 @@ func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
     logger.Printf("404 page not found")
     http.NotFound(respw, req)
   }
+
+  context.ClearData(req)
   logger.Printf("Completed in %v", time.Since(t0))
 }
 

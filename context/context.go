@@ -53,3 +53,7 @@ func GetOk(req *http.Request, key interface{}) (interface{}, bool) {
   val, ok := requestData[req][key]
   return val, ok
 }
+
+func ClearData(req *http.Request) {
+  delete(requestData, req)
+}
