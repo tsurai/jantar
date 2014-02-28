@@ -4,7 +4,6 @@
 // syntactic sugar by avoiding unnecessary reflections.
 //
 // While trying to be slim amber provides a number of security features out of the box to avoid common security vulnerabilities.
-
 package amber
 
 import (
