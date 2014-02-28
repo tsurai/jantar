@@ -1,8 +1,8 @@
 package middleware
 
 import (
-  "amber"
-  "amber/context"
+  "github.com/tsurai/amber"
+  "github.com/tsurai/amber/context"
   "net/url"
   "net/http"
 )

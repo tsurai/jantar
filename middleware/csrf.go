@@ -1,11 +1,11 @@
 package middleware
 
 import(
+  "github.com/tsurai/amber"
+  "github.com/tsurai/amber/context"
   "os"
   "io"
   "fmt"
-  "amber"
-  "amber/context"
   "strings"
   "net/http"
   "html/template"

@@ -1,7 +1,7 @@
 package amber
 
 import (
-  "amber/context"
+  "github.com/tsurai/amber/context"
   "os"
   "fmt"
   "time"

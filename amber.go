@@ -7,7 +7,7 @@
 package amber
 
 import (
-  "amber/context"
+  "github.com/tsurai/amber/context"
   "os"
   "log"
   "fmt"
