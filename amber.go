@@ -26,7 +26,7 @@ type Amber struct {
   port        uint
   middleware  []IMiddleware
   tm          *TemplateManager
-  *router
+  router      *router
 }
 
 // New creates a new Amber instance ready to listen on a given hostname and port
@@ -76,6 +76,10 @@ func (a *Amber) callMiddleware(respw http.ResponseWriter, req *http.Request) boo
   return true  
 }
 
+func (a *Amber) AddRoute(method string, pattern string, handler interface{}) *route {
+  return a.router.addRoute(method, pattern, handler)
+}
+
 // ServeHTTP implements the http.Handler interface
 func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
   t0 := time.Now()
@@ -86,7 +90,7 @@ func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 
   logger.Printf("%s %s", req.Method, req.RequestURI)
 
-  if route := a.searchRoute(req); route != nil {
+  if route := a.router.searchRoute(req); route != nil {
     if a.callMiddleware(respw, req) {
       route.handler(respw, req)
     }

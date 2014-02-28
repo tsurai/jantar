@@ -20,7 +20,6 @@ type route struct {
   method          string
   handler         http.HandlerFunc
   regex           *regexp.Regexp
-  router          *router
 }
 
 type router struct {
@@ -35,8 +34,8 @@ func newRouter(hostname string, port uint) *router {
   return &router{hostname: hostname, port: strconv.FormatUint(uint64(port), 10), namedRoutes: make(map[string]*route)}
 }
 
-func (r *router) AddRoute(method string, pattern string, handler interface{}) *route {
-  route := newRoute(strings.ToUpper(method), pattern, handler, r)
+func (r *router) addRoute(method string, pattern string, handler interface{}) *route {
+  route := newRoute(strings.ToUpper(method), pattern, handler)
   r.routes = append(r.routes, route)
 
   // is route a controller route
@@ -104,7 +103,7 @@ func (r *router) getNamedRoute(name string) *route {
 }
 
 // Route functions ---------------------------------------------
-func newRoute(method string, pattern string, handler interface{}, router *router) *route {
+func newRoute(method string, pattern string, handler interface{}) *route {
   var finalFunc http.HandlerFunc
   cName := ""
   cAction := ""
@@ -138,11 +137,12 @@ func newRoute(method string, pattern string, handler interface{}, router *router
   })
   regexPattern = regexPattern + "/?(\\?.*)?"
 
-  return &route{cName, cAction, pattern, method, finalFunc, regexp.MustCompile(regexPattern), router}
+  return &route{cName, cAction, pattern, method, finalFunc, regexp.MustCompile(regexPattern)}
 }
 
 func (r *route) Name(name string) {
-  r.router.namedRoutes[strings.ToLower(name)] = r
+  router := context.GetGlobal("Router").(*router)
+  router.namedRoutes[strings.ToLower(name)] = r
 }
 
 func servePublic(rw http.ResponseWriter, req *http.Request) {
