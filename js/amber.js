@@ -1,44 +1,93 @@
-$('form').on('submit', function(e) {
-  var csrf_token = $('meta[name=csrf-token]').attr('content');
+function get_elements_by_tag_and_attr(tag, attr) {
+  var ret = new Array();
+  var elements = document.getElementsByTagName(tag);
   
-  if(csrf_token != null) {
-    $(this).append('<input type="hidden" name="_csrf-token" value="'+csrf_token+'">');
+  for(i = 0; i < elements.length; i++) {
+    if(elements[i].hasAttribute(attr)) {
+      ret.push(elements[i]);
+    }
   }
-});
 
-$('a[data-method]').on('click', function(e) {
-  var csrf_token = $('meta[name=csrf-token]').attr('content');
-  var href = $(this).attr('href');
-  var method = $(this).attr('data-method').toUpperCase();
+  return ret;
+}
 
-  if(!(method == "GET" || method == "POST" || method == "PUT" || method == "GET")) {
-    method = "POST";
+function get_csrf_token() {
+  var elements = document.getElementsByName("csrf-token");
+
+  for(i = 0; i < elements.length; i++) {
+    if(elements[i].tagName.toLowerCase() == "meta" && elements[i].hasAttribute("content")) {
+      return elements[i].getAttribute("content");
+    }
   }
-  
-  var form = $('<form method="POST" href="'+href+'">');
-  form.append('<input type="hidden" name="_method" value="'+method+'"/>')
-      .append('<input type="hidden" name="_csrf-token" value="'+csrf_token+'"/>')
-      .appendTo('body');
 
-  e.preventDefault();
-  form.submit();
-});
+  return "";
+}
 
-$('a[data-confirm], input[data-confirm]').on('click', function() {
-  if(!confirm($(this).attr('data-confirm'))) {
-    return false;
+function insert_csrf_token_into_forms(token) {
+  if(token != "") {
+    var elements = document.getElementsByTagName("form");
+
+    for(i = 0; i < elements.length; i++) {
+      elements[i].onsubmit = function(e) {
+        this.innerHTML += '<input type="hidden" name="_csrf-token" value="'+token+'">';
+      }
+    }
   }
-});
+}
 
-$('a[data-confirm]').on('click', function() {
-  var href = $(this).attr('href');
-  if (!$('#dataConfirmModal').length) {
-    $('body').append('<div id="dataConfirmModal" class="modal fade bs-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true"><div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button><h3 id="dataConfirmLabel">Please Confirm</h3></div><div class="modal-body"></div><div class="modal-footer"><button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button><a class="btn btn-primary" id="dataConfirmOK">OK</a></div></div></div></div>');
-  } 
-  
-  $('#dataConfirmModal').find('.modal-body').text($(this).attr('data-confirm'));
-  $('#dataConfirmOK').attr('href', href);
-  $('#dataConfirmModal').modal({show:true});
-  
-  return false;
-});
+function insert_csrf_token_into_links(token) {
+  if(token != "") {
+    var elements = get_elements_by_tag_and_attr("a", "data-method");
+
+    for(i = 0; i < elements.length; i++) {
+      var href = elements[i].getAttribute("href");
+      var method = elements[i].getAttribute("data-method").toUpperCase();
+      
+      if(!(method == "GET" || method == "POST" || method == "PUT")) {
+        method = "POST";
+      }
+
+      elements[i].onclick = function(e) {
+        var form = document.createElement("form");
+        form.setAttribute("method", "POST");
+        form.setAttribute("action", href);
+
+        var input_method = document.createElement("input");
+        input_method.setAttribute("type", "hidden");
+        input_method.setAttribute("name", "_method");
+        input_method.setAttribute("value", method);
+
+        var input_csrf = document.createElement("input");
+        input_csrf.setAttribute("type", "hidden");
+        input_csrf.setAttribute("name", "_csrf-token");
+        input_csrf.setAttribute("value", token);
+
+        form.appendChild(input_method);
+        form.appendChild(input_csrf);
+        document.body.appendChild(form);
+
+        e.preventDefault();
+        form.submit();
+      }
+    }
+  }  
+}
+
+function clickjacking_protection() {
+  if (self === top) {
+    var antiClickjack = document.getElementById("antiClickjack");
+    antiClickjack.parentNode.removeChild(antiClickjack);
+  } else {
+    top.location = self.location;
+  }
+}
+
+window.onload = function() {
+  clickjacking_protection();
+
+  var csrf_token = get_csrf_token();
+  if(csrf_token != "") {
+    insert_csrf_token_into_links(csrf_token);
+    insert_csrf_token_into_forms(csrf_token);
+  }
+}

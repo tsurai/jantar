@@ -33,6 +33,10 @@ type TemplateManager struct {
 
 func newTemplateManager(directory string) *TemplateManager {
   funcs := template.FuncMap{
+    /* security functions */
+    "antiClickjacking": func() template.HTML {
+      return  template.HTML("<style id=\"antiClickjack\">body{display:none !important;}</style>")
+    },
     "set": func(args map[string]interface{}, key string, value interface{}) string {
       if args != nil {
         args[key] = value
