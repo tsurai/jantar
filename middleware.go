@@ -14,7 +14,8 @@ type Middleware struct {
 
 // IMiddleware is an interface that describes a Middleware
 type IMiddleware interface {
-  Initialize()
+  initialize()
+  cleanup()
   Call(rw http.ResponseWriter, r *http.Request) bool
   Yield(rw http.ResponseWriter, r *http.Request)
   setNext(mw *IMiddleware)

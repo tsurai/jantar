@@ -71,6 +71,12 @@ func (a *Amber) initMiddleware() {
   }
 }
 
+func (a *Amber) cleanupMiddleware() {
+ for _, mw := range a.middleware {
+    mw.Cleanup()
+  } 
+}
+
 func (a *Amber) callMiddleware(respw http.ResponseWriter, req *http.Request) bool {
   for _, mw := range a.middleware {
     if !mw.Call(respw, req) {
@@ -183,6 +189,8 @@ func (a *Amber) Stop() {
 
   // wait until all pending requests have been finished
   a.wg.Wait()
+
+  cleanupMiddleware()
 }
 
 // Run starts the http server and listens on the hostname and port given to New

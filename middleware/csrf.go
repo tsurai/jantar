@@ -56,6 +56,11 @@ func (c *Csrf) Initialize() {
   }
 }
 
+// Cleanup saves the current secretkey to accept old tokens with the next start
+func (c *Csrf) Cleanup() {
+  // TODO: Save last secretkey for the next start
+}
+
 // Call executes the Middleware
 // Note: Do not call this yourself
 func (c *Csrf) Call(respw http.ResponseWriter, req *http.Request) bool {

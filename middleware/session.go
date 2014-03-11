@@ -19,6 +19,11 @@ func (s *Session) Initialize() {
   
 }
 
+// Cleanup saves active Sessions in permanent memory
+func (s *Session) Cleanup() {
+  // TODO: save sessions
+}
+
 // Call executes the Middleware
 // Note: Do not call this yourself
 func (s *Session) Call(respw http.ResponseWriter, req *http.Request) bool {
