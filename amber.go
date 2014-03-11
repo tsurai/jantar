@@ -84,10 +84,10 @@ func (a *Amber) callMiddleware(respw http.ResponseWriter, req *http.Request) boo
   return true  
 }
 
+// AddRoute adds a route with given method, pattern and handler to the Router
 func (a *Amber) AddRoute(method string, pattern string, handler interface{}) *route {
   return a.router.addRoute(method, pattern, handler)
 }
-
 
 func (a *Amber) setSecurityHeader(header http.Header) {
   header.Add("X-Content-Type-Options", "nosniff")
