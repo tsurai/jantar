@@ -9,9 +9,12 @@ package amber
 import (
   "github.com/tsurai/amber/context"
   "os"
+  "os/signal"
   "log"
   "fmt"
+  "net"
   "time"
+  "sync"
   "strings"
   "net/http"
 )
@@ -25,6 +28,9 @@ var (
 type Amber struct {
   hostname    string
   port        uint
+  closing     bool
+  wg          sync.WaitGroup
+  listener    net.Listener
   middleware  []IMiddleware
   tm          *TemplateManager
   router      *router
@@ -38,6 +44,7 @@ func New(hostname string, port uint) *Amber {
     tm: newTemplateManager("views"),
     router: newRouter(hostname, port),
     middleware: nil,
+    closing: false,
   }
 
   logger = log.New(os.Stdout, "[amber] ", 0)
@@ -107,8 +114,43 @@ func servePublic(rw http.ResponseWriter, req *http.Request) {
   http.NotFound(rw, req)
 }
 
+func (a *Amber) listenForSignals() {
+  sigChan := make(chan os.Signal, 1)
+
+  signal.Notify(sigChan, os.Interrupt, os.Kill)
+
+  s := <-sigChan
+  if s == os.Kill {
+    logger.Println("[Fatal] Got SIGKILL")
+  }
+
+  a.Stop()
+}
+
+func (a *Amber) listenAndServe(addr string, handler http.Handler) error {
+  if addr == "" {
+    addr = ":http"
+  }
+
+  server := &http.Server{Addr: addr, Handler: handler}
+  
+  var err error
+  a.listener, err = net.Listen("tcp", addr)
+  if err != nil {
+    return err
+  }
+
+  if err = server.Serve(a.listener); !a.closing {
+    return err
+  } 
+
+  return nil
+}
+
 // ServeHTTP implements the http.Handler interface
 func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
+  a.wg.Add(1)
+
   t0 := time.Now()
 
   if method := req.FormValue("_method"); method != "" {
@@ -128,16 +170,36 @@ func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 
   context.ClearData(req)
   logger.Printf("Completed in %v", time.Since(t0))
+
+  a.wg.Done()
 }
 
-// Run starts the http server and listens on the hostname and port given to New.
+// Stop closes the listener and stops the server when all pending requests have been finished
+func (a *Amber) Stop() {
+  a.closing = true
+
+  // stop listening for new connections
+  a.listener.Close()
+
+  // wait until all pending requests have been finished
+  a.wg.Wait()
+}
+
+// Run starts the http server and listens on the hostname and port given to New
 func (a *Amber) Run() {
   a.initMiddleware()
 
   if err := a.tm.loadTemplates(); err != nil {
     logger.Fatal("[Fatal]", err)
   }
+
+  go a.listenForSignals()
   
   logger.Println("Starting server & listening on port", a.port)
-  logger.Fatal("[Fatal]", http.ListenAndServe(fmt.Sprintf(":%d", a.port), a))
+  
+  if err := a.listenAndServe(fmt.Sprintf(":%d", a.port), a); err != nil {
+    logger.Println(err)
+  }
+  
+  logger.Println("Stopping server")
 }
