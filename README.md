@@ -24,7 +24,10 @@ import (
 )
 
 func main() {
-	a := amber.New()
+	a := amber.New(&amber.Config {
+    Hostname: "localhost",
+    Port:     3000,
+  })
 
   a.AddRoute("GET", "/", func(respw http.ResponseWriter, req *http.Request) {
     respw.Write([]byte("Hello World"))
@@ -78,7 +81,10 @@ import (
 )
 
 func main() {
-	a := amber.New()
+	a := amber.New(&amber.Config {
+    Hostname: "localhost",
+    Port:     3000,
+  })
 
 	a.AddRoute("GET", "/", amber.CallController((*c.App).Index))
 
