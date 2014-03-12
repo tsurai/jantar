@@ -17,6 +17,7 @@ import (
   "sync"
   "strings"
   "net/http"
+  "crypto/tls"
 )
 
 // logger is a package global logger instance using the prefix "[amber] " on outputs
@@ -26,34 +27,75 @@ var (
 
 // Amber is the top level application type
 type Amber struct {
-  hostname    string
-  port        uint
   closing     bool
   wg          sync.WaitGroup
   listener    net.Listener
+  config      *Config
   middleware  []IMiddleware
   tm          *TemplateManager
   router      *router
 }
 
+type TlsConfig struct {
+  CertFile    string
+  KeyFile     string
+  CertPem     []byte
+  KeyPem      []byte
+  cert        *tls.Certificate
+}
+
+type Config struct {
+  Hostname    string
+  Port        uint
+  Tls         *TlsConfig
+}
+
 // New creates a new Amber instance ready to listen on a given hostname and port
-func New(hostname string, port uint) *Amber {
+func New(config *Config) *Amber {
+  if config == nil {
+    logger.Fatal("[Fatal] No config given")
+  }
+
   a := &Amber{
-    hostname: hostname,
-    port: port,
+    config: config,
     tm: newTemplateManager("views"),
-    router: newRouter(hostname, port),
+    router: newRouter(config.Hostname, config.Port),
     middleware: nil,
     closing: false,
   }
 
   logger = log.New(os.Stdout, "[amber] ", 0)
+
+  if config.Tls != nil {
+    a.loadCertificate()
+  }
+  
   context.SetGlobal("TemplateManager", a.tm)
   context.SetGlobal("Router", a.router)
 
   a.AddRoute("GET", "/public/.+", servePublic)
 
   return a
+}
+
+func (a *Amber) loadCertificate() {
+  var err error
+  var cert tls.Certificate
+  conf := a.config.Tls
+
+  if conf.CertFile != "" && conf.KeyFile != "" {
+    cert, err = tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
+  } else if conf.CertPem != nil && conf.KeyPem != nil {
+    cert, err = tls.X509KeyPair(conf.CertPem, conf.KeyPem)
+  } else {
+    logger.Fatal("[Fatal] Can't load X509 certificate. Reason: Missing parameter")
+  }
+
+  if err != nil {
+    logger.Fatal("[Fatal] Can't load X509 certificate. Reason: ", err)
+  }
+
+  a.config.Tls.cert = &cert
 }
 
 // AddMiddleware adds a given middleware to the current middleware list. Middlewares are executed
@@ -141,7 +183,30 @@ func (a *Amber) listenAndServe(addr string, handler http.Handler) error {
   server := &http.Server{Addr: addr, Handler: handler}
   
   var err error
-  a.listener, err = net.Listen("tcp", addr)
+
+  if a.config.Tls != nil {
+    // configure tls with secure settings
+    a.listener, err = tls.Listen("tcp", addr, &tls.Config{
+      Certificates: []tls.Certificate{*a.config.Tls.cert},
+      CipherSuites: []uint16{
+        tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+        tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+        tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+        tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+        tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+        tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+        tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+        tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+        tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+        tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+      },
+      PreferServerCipherSuites: true,
+      MinVersion: tls.VersionTLS10,
+    })
+  } else {
+   a.listener, err = net.Listen("tcp", addr) 
+  }
+
   if err != nil {
     return err
   }
@@ -190,7 +255,7 @@ func (a *Amber) Stop() {
   // wait until all pending requests have been finished
   a.wg.Wait()
 
-  cleanupMiddleware()
+  a.cleanupMiddleware()
 }
 
 // Run starts the http server and listens on the hostname and port given to New
@@ -203,9 +268,9 @@ func (a *Amber) Run() {
 
   go a.listenForSignals()
   
-  logger.Println("Starting server & listening on port", a.port)
+  logger.Println("Starting server & listening on port", a.config.Port)
   
-  if err := a.listenAndServe(fmt.Sprintf(":%d", a.port), a); err != nil {
+  if err := a.listenAndServe(fmt.Sprintf("%s:%d", a.config.Hostname, a.config.Port), a); err != nil {
     logger.Println(err)
   }
   
