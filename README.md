@@ -1,8 +1,28 @@
 # Amber [![GoDoc](https://godoc.org/github.com/tsurai/amber?status.png)](http://godoc.org/github.com/tsurai/amber)
 
-Amber is a very minimalist mvc web framework written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini) but emphasizes performance over syntactic sugar by avoiding unnecessary reflections.
+Amber is a lightweight mvc web framework with emphasis on security written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini) but prefers performance over syntactic sugar and aims to provide crucial security settings and features right out of the box.
 
-While trying to be slim amber provides a number of security features out of the box to avoid common security vulnerabilities.
+## Features
+* RESTful pattern with protection against cross-site request forgery
+* Secure default settings for TLS
+	* No RC4, DES or similarly insecure cipher
+	* No SSL, requires at least TLS 1.0
+	* Prefered cipher: TLS_ECDHE_ECDSA_WITH_AES_256_CCB_SHA384
+* Secure default HTTP header
+	* Strict-Transport-Security: max-age=31536000;includeSubDomains
+	* X-Frame-Options: sameorigin
+	* X-XSS-Protection: 1;mode=block
+	* X-Content-Type-Options: nosniff
+* Encrypted and signed cookies using AES256 and HMAC(SHA256)
+* Simple Middleware interface
+
+## Table of Contents
+* [Current State](#current-state)
+* [Getting Started](#getting-started)
+  * [Controller](#controller)
+* [A note on security](#a-note-on-security)
+	* [/dev/urandom](#devurandom)
+* [Todo List](#todo-list)
 
 ## Current State
 Amber is currently getting completly redesigned and is not usable right now.
@@ -37,7 +57,7 @@ func main() {
 }
 ```
 
-## Controller
+### Controller
 
 Using Controller and rendering Templates is very easy with Amber. For this simple example I'm going to assume the following directory structure. A detailed description will follow soon.
 ```
@@ -92,6 +112,13 @@ func main() {
 }
 
 ```
+
+## A note on security
+Amber is by no means secure in the literal sense of the word. What it does is providing easy and fast ways to protect against the most common vulnerabilities. Security should never be left out because it is too troublesome to implement.
+
+### /dev/urandom
+Some might wonder why Amber is using /dev/urandom instead of the seemingly more secure /dev/random.
+Please take some minutes and read this interesting article about [/dev/urandom/](http://www.2uo.de/myths-about-urandom/)
 
 ## Todo List
 - ~~proper error handling~~
