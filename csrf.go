@@ -1,18 +1,14 @@
-package middleware
+package amber
 
 import(
-  "github.com/tsurai/amber"
   "github.com/tsurai/amber/context"
-  "os"
-  "io"
-  "fmt"
   "strings"
   "net/url"
   "net/http"
   "html/template"
+  "crypto/rand"
   "crypto/hmac"
   "crypto/sha512"
-  "crypto/rand"
   "encoding/base64"
 )
 
@@ -24,47 +20,45 @@ const (
   secretLength = 32
 )
 
-// Csrf is a Middleware that protects against cross-side request forgery
-type Csrf struct {
-  amber.Middleware
-  // BlockingRandom determines whether to use /dev/urandom or /dev/random on unix systems
-  BlockingRandom bool
+// csrf is a Middleware that protects against cross-side request forgery
+type csrf struct {
+  Middleware
 }
 
 func noAccess(respw http.ResponseWriter, req *http.Request) {
   http.Error(respw, "400 bad request", 400)
 }
 
-// Initialize prepares Csrf for usage
+// Initialize prepares csrf for usage
 // Note: Do not call this yourself
-func (c *Csrf) Initialize() {
-  generateSecretKey(c.BlockingRandom)
+func (c *csrf) Initialize() {
+  generateSecretKey()
 
   // add all hooks to TemplateManger
-  tm := context.GetGlobal("TemplateManager").(*amber.TemplateManager)
+  tm := context.GetGlobal("TemplateManager").(*TemplateManager)
   if tm == nil {
-    panic("[Fatal] Failed to get template manager")
+    logger.Fatal("[Fatal] Failed to get template manager")
   }
 
   tm.AddTmplFunc("csrfToken", func() string { return "" })
 
-  if err := tm.AddHook(amber.TmBeforeParse, beforeParseHook); err != nil {
-    panic(err)
+  if err := tm.AddHook(TmBeforeParse, beforeParseHook); err != nil {
+    logger.Fatal(err)
   }
 
-  if err := tm.AddHook(amber.TmBeforeRender, beforeRenderHook); err != nil {
-    panic(err)
+  if err := tm.AddHook(TmBeforeRender, beforeRenderHook); err != nil {
+    logger.Fatal(err)
   }
 }
 
 // Cleanup saves the current secretkey to accept old tokens with the next start
-func (c *Csrf) Cleanup() {
+func (c *csrf) Cleanup() {
   // TODO: Save last secretkey for the next start
 }
 
 // Call executes the Middleware
 // Note: Do not call this yourself
-func (c *Csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
+func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
   uniqueID := make([]byte, 32)
   
   if cookie, err := req.Cookie("AMBER_ID"); err == nil {
@@ -73,7 +67,7 @@ func (c *Csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
     }
   } else {
     if n, err := rand.Read(uniqueID); n != 32 || err != nil {
-      panic("[Fatal] Failed to generate secret key.")
+      logger.Fatal("[Fatal] Failed to generate secret key.")
     }
 
     http.SetCookie(respw, &http.Cookie{Name: "AMBER_ID", Value: "id=" + base64.StdEncoding.EncodeToString(uniqueID)})
@@ -96,25 +90,17 @@ func (c *Csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
 
   /* TODO: use error handler as parameter */
   noAccess(respw, req)
-  fmt.Println("CSRF Detected! IP:", req.RemoteAddr)
+  logger.Println("CSRF Detected! IP:", req.RemoteAddr)
 
   /* log ip etc pp */
   return false
 }
 
-func generateSecretKey(blocking bool) {
+func generateSecretKey() {
   secretKey = make([]byte, secretLength)
-  
-  if blocking {
-    if file, err := os.Open("/dev/random"); err == nil {
-      if n, err := io.ReadAtLeast(file, secretKey, secretLength); n == secretLength && err == nil {
-        return
-      }
-    }
-  }
 
   if n, err := rand.Read(secretKey); n != secretLength || err != nil {
-    panic("[Fatal] Failed to generate secret key.")
+    logger.Fatal("[Fatal] Failed to generate secret key.")
   }
 }
 
@@ -125,17 +111,17 @@ func generateToken(sessionID string) []byte {
   return mac.Sum(nil)
 }
 
-func beforeParseHook(tm *amber.TemplateManager, name string, data *[]byte) {
+func beforeParseHook(tm *TemplateManager, name string, data *[]byte) {
   tmplData := string(*data)
 
   offset := strings.Index(tmplData, "<head>")
   if offset != -1 {
-    tmplData = tmplData[:offset+6]+"<meta name=\"csrf-token\" content=\"{{csrfToken}}\">"+tmplData[offset+6:]
+    tmplData = tmplData[:offset+6] + "<meta name=\"csrf-token\" content=\"{{csrfToken}}\">" + tmplData[offset+6:]
     *data = []byte(tmplData)
   }
 }
 
-func beforeRenderHook(req *http.Request, tm *amber.TemplateManager, tmpl *template.Template, args map[string]interface{}) {
+func beforeRenderHook(req *http.Request, tm *TemplateManager, tmpl *template.Template, args map[string]interface{}) {
   if token, ok := context.GetOk(req, "_csrf"); ok {
     tmpl = tmpl.Funcs(template.FuncMap{
       "csrfToken": func() string {

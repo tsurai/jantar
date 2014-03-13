@@ -69,8 +69,13 @@ func New(config *Config) *Amber {
     closing: false,
   }
 
+  // create logger
   logger = log.New(os.Stdout, "[amber] ", 0)
 
+  // load default middleware
+  a.AddMiddleware(&csrf{})
+
+  // load ssl certificate
   if config.Tls != nil {
     a.loadCertificate()
   }
