@@ -238,7 +238,10 @@ func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 
   logger.Printf("%s %s", req.Method, req.RequestURI)
 
-  respw.Header().Set("Strict-Transport-Security", "max-age=31536000")
+  // set security header
+  respw.Header().Set("Strict-Transport-Security", "max-age=31536000;includeSubDomains")
+  respw.Header().Set("X-Frame-Options", "sameorigin")
+  respw.Header().Set("X-XSS-Protection", "1;mode=block")
   respw.Header().Set("X-Content-Type-Options", "nosniff")
 
   if route := a.router.searchRoute(req); route != nil {
