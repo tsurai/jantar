@@ -25,6 +25,11 @@ var (
   logger *log.Logger
 )
 
+const (
+  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 uint16 = 0xc024
+  TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 uint16 = 0xc030
+)
+
 // Amber is the top level application type
 type Amber struct {
   closing     bool
@@ -59,7 +64,7 @@ func New(config *Config) *Amber {
   a := &Amber{
     config: config,
     tm: newTemplateManager("views"),
-    router: newRouter(config.Hostname, config.Port),
+    router: newRouter(),
     middleware: nil,
     closing: false,
   }
@@ -137,10 +142,6 @@ func (a *Amber) AddRoute(method string, pattern string, handler interface{}) *ro
   return a.router.addRoute(method, pattern, handler)
 }
 
-func (a *Amber) setSecurityHeader(header http.Header) {
-  header.Add("X-Content-Type-Options", "nosniff")
-}
-
 func servePublic(rw http.ResponseWriter, req *http.Request) {
   var file http.File
   var err error
@@ -189,16 +190,18 @@ func (a *Amber) listenAndServe(addr string, handler http.Handler) error {
     a.listener, err = tls.Listen("tcp", addr, &tls.Config{
       Certificates: []tls.Certificate{*a.config.Tls.cert},
       CipherSuites: []uint16{
-        tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
-        tls.TLS_RSA_WITH_AES_128_CBC_SHA,
-        tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-        tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-        tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-        tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
-        tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-        tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-        tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+        TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
+        TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
         tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+        tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+        tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+        tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+        tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+        tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+        tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+        tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+        tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+        tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
       },
       PreferServerCipherSuites: true,
       MinVersion: tls.VersionTLS10,
@@ -229,6 +232,9 @@ func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
   }
 
   logger.Printf("%s %s", req.Method, req.RequestURI)
+
+  respw.Header().Set("Strict-Transport-Security", "max-age=31536000")
+  respw.Header().Set("X-Content-Type-Options", "nosniff")
 
   if route := a.router.searchRoute(req); route != nil {
     if a.callMiddleware(respw, req) {

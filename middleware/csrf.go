@@ -7,6 +7,7 @@ import(
   "io"
   "fmt"
   "strings"
+  "net/url"
   "net/http"
   "html/template"
   "crypto/hmac"
@@ -64,14 +65,23 @@ func (c *Csrf) Cleanup() {
 // Call executes the Middleware
 // Note: Do not call this yourself
 func (c *Csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
-  sessionID, foundSession := context.GetOk(req, "session_id")
-  if !foundSession {
-    return true
+  uniqueID := make([]byte, 32)
+  
+  if cookie, err := req.Cookie("AMBER_ID"); err == nil {
+    if m, err := url.ParseQuery(cookie.Value); err == nil {
+      uniqueID = []byte(m["id"][0])
+    }
+  } else {
+    if n, err := rand.Read(uniqueID); n != 32 || err != nil {
+      panic("[Fatal] Failed to generate secret key.")
+    }
+
+    http.SetCookie(respw, &http.Cookie{Name: "AMBER_ID", Value: "id=" + base64.StdEncoding.EncodeToString(uniqueID)})
   }
 
   tokenString := req.PostFormValue("_csrf-token")
   if tokenString == "" {
-    context.Set(req, "_csrf", base64.StdEncoding.EncodeToString(generateToken(sessionID.(string))))
+    context.Set(req, "_csrf", base64.StdEncoding.EncodeToString(generateToken(string(uniqueID))))
     return true
   }
 
@@ -80,7 +90,7 @@ func (c *Csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
   }
 
   token, _ := base64.StdEncoding.DecodeString(tokenString)
-  if hmac.Equal(token, generateToken(sessionID.(string))) {
+  if hmac.Equal(token, generateToken(string(uniqueID))) {
     return true
   }
 

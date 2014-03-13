@@ -4,7 +4,6 @@ package amber
 import (
   "github.com/tsurai/amber/context"
   "fmt"
-  "strconv"
   "strings"
   "regexp"
   "reflect"
@@ -22,15 +21,13 @@ type route struct {
 }
 
 type router struct {
-  hostname    string
-  port        string
   namedRoutes map[string]*route
   routes      []*route
 }
 
 // Router functions ----------------------------------------------
-func newRouter(hostname string, port uint) *router {
-  return &router{hostname: hostname, port: strconv.FormatUint(uint64(port), 10), namedRoutes: make(map[string]*route)}
+func newRouter() *router {
+  return &router{namedRoutes: make(map[string]*route)}
 }
 
 func (r *router) addRoute(method string, pattern string, handler interface{}) *route {
@@ -84,10 +81,7 @@ func (r *router) getReverseUrl(name string, param []interface{}) string {
       return ""
     })
 
-    if r.port != "80" || r.port != "8080" {
-      return "http://" + r.hostname + ":" + r.port + url
-    }
-    return "http://" + r.hostname + url
+    return url
   }
 
   return ""
