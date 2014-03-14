@@ -44,12 +44,12 @@ type TlsConfig struct {
   KeyFile     string
   CertPem     []byte
   KeyPem      []byte
-  cert        *tls.Certificate
+  cert        tls.Certificate
 }
 
 type Config struct {
   Hostname    string
-  Port        uint
+  Port        int
   Tls         *TlsConfig
 }
 
@@ -65,6 +65,14 @@ func New(config *Config) *Amber {
     router: newRouter(),
     middleware: nil,
     closing: false,
+  }
+
+  if a.config.Port < 1 {
+    if a.config.Tls == nil {
+      a.config.Port = 80
+    } else {
+      a.config.Port = 443
+    }
   }
 
   // create logger
@@ -103,7 +111,7 @@ func (a *Amber) loadCertificate() {
     logger.Fatal("[Fatal] Can't load X509 certificate. Reason: ", err)
   }
 
-  a.config.Tls.cert = &cert
+  a.config.Tls.cert = cert
 }
 
 // AddMiddleware adds a given middleware to the current middleware list. Middlewares are executed
@@ -191,7 +199,7 @@ func (a *Amber) listenAndServe(addr string, handler http.Handler) error {
   if a.config.Tls != nil {
     // configure tls with secure settings
     a.listener, err = tls.Listen("tcp", addr, &tls.Config{
-      Certificates: []tls.Certificate{*a.config.Tls.cert},
+      Certificates: []tls.Certificate{a.config.Tls.cert},
       CipherSuites: []uint16{
         TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
         TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
