@@ -12,6 +12,8 @@ import(
   "encoding/base64"
 )
 
+// TODO: accept custom handler
+
 var (
   secretKey []byte
 )

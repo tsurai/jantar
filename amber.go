@@ -1,9 +1,7 @@
-// Package amber is a minimalist mvc web framework written in golang.
+// Amber is a lightweight mvc web framework with emphasis on security written in golang.
 //
-// It has been largely inspired by Martini(https://github.com/codegangsta/martini) but emphasizes performance over
-// syntactic sugar by avoiding unnecessary reflections.
-//
-// While trying to be slim amber provides a number of security features out of the box to avoid common security vulnerabilities.
+// It has been largely inspired by Martini(https://github.com/codegangsta/martini) but prefers performance over 
+// syntactic sugar and aims to provide crucial security settings and features right out of the box.
 package amber
 
 import (
@@ -26,7 +24,7 @@ var (
 )
 
 const (
-  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 uint16 = 0xc024
+  TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 uint16 = 0xc02c
   TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 uint16 = 0xc030
 )
 
@@ -195,7 +193,7 @@ func (a *Amber) listenAndServe(addr string, handler http.Handler) error {
     a.listener, err = tls.Listen("tcp", addr, &tls.Config{
       Certificates: []tls.Certificate{*a.config.Tls.cert},
       CipherSuites: []uint16{
-        TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
+        TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
         TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
         tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
         tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
