@@ -7,7 +7,7 @@ Amber is a lightweight mvc web framework with emphasis on security written in go
 * Secure default settings for TLS
 	* No RC4, DES or similarly insecure cipher
 	* No SSL, requires at least TLS 1.0
-	* Prefered cipher: TLS_ECDHE_ECDSA_WITH_AES_256_CCB_SHA384
+	* Prefered cipher: TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
 * Secure default HTTP header
 	* Strict-Transport-Security: max-age=31536000;includeSubDomains
 	* X-Frame-Options: sameorigin
