@@ -217,7 +217,15 @@ func (a *Amber) listenAndServe(addr string, handler http.Handler) error {
       PreferServerCipherSuites: true,
       MinVersion: tls.VersionTLS10,
     })
-  } else {
+
+    // listen redirect port 80 to 443 if using the standard port
+    if a.config.Port == 443 {
+      go http.ListenAndServe(fmt.Sprintf("%s:%d", a.config.Hostname, 80), http.HandlerFunc(
+        func(respw http.ResponseWriter, req *http.Request) {
+          http.Redirect(respw, req, "https://" + a.config.Hostname + req.RequestURI, 301)
+        }))
+    }
+   } else {
    a.listener, err = net.Listen("tcp", addr) 
   }
 
