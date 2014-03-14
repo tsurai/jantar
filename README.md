@@ -1,6 +1,6 @@
-# Amber [![GoDoc](https://godoc.org/github.com/tsurai/amber?status.png)](http://godoc.org/github.com/tsurai/amber)
+# Jantar [![GoDoc](https://godoc.org/github.com/tsurai/jantar?status.png)](http://godoc.org/github.com/tsurai/jantar)
 
-Amber is a lightweight mvc web framework with emphasis on security written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini) but prefers performance over syntactic sugar and aims to provide crucial security settings and features right out of the box.
+Jantar is a lightweight mvc web framework with emphasis on security written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini) but prefers performance over syntactic sugar and aims to provide crucial security settings and features right out of the box.
 
 ## Features
 * RESTful pattern with protection against cross-site request forgery
@@ -25,26 +25,26 @@ Amber is a lightweight mvc web framework with emphasis on security written in go
 * [Todo List](#todo-list)
 
 ## Current State
-Amber is currently getting completly redesigned and is not usable right now.
+Jantar is currently getting completly redesigned and is not usable right now.
 
 ## Getting Started
 
 First you have to download and install the package into the import path. This can easily be done with go get:
 ```
-go get github.com/tsurai/amber
+go get github.com/tsurai/jantar
 ```
 
-Now you can import amber and create a simple website
+Now you can import jantar and create a simple website
 ```
 package main
 
 import (
 	"net/http"
-	"github.com/tsurai/amber"
+	"github.com/tsurai/jantar"
 )
 
 func main() {
-	a := amber.New(&amber.Config {
+	a := jantar.New(&jantar.Config {
     Hostname: "localhost",
     Port:     3000,
   })
@@ -59,7 +59,7 @@ func main() {
 
 ### Controller
 
-Using Controller and rendering Templates is very easy with Amber. For this simple example I'm going to assume the following directory structure. A detailed description will follow soon.
+Using Controller and rendering Templates is very easy with Jantar. For this simple example I'm going to assume the following directory structure. A detailed description will follow soon.
 ```
 |- controllers/
 |-- app.go
@@ -74,11 +74,11 @@ Using Controller and rendering Templates is very easy with Amber. For this simpl
 package controller
 
 import (
-	"github.com/tsurai/amber"
+	"github.com/tsurai/jantar"
 )
 
 type App struct {
-  amber.Controller
+  jantar.Controller
 }
 
 func (c *App) Index() {
@@ -96,17 +96,17 @@ func (c *App) Index() {
 package main
 
 import (
-	"github.com/tsurai/amber"
+	"github.com/tsurai/jantar"
 	c "controllers"
 )
 
 func main() {
-	a := amber.New(&amber.Config {
+	a := jantar.New(&jantar.Config {
     Hostname: "localhost",
     Port:     3000,
   })
 
-	a.AddRoute("GET", "/", amber.CallController((*c.App).Index))
+	a.AddRoute("GET", "/", jantar.CallController((*c.App).Index))
 
 	a.Run()
 }
@@ -114,10 +114,10 @@ func main() {
 ```
 
 ## A note on security
-Amber is by no means secure in the literal sense of the word. What it does is providing easy and fast ways to protect against the most common vulnerabilities. Security should never be left out because it is too troublesome to implement.
+Jantar is by no means secure in the literal sense of the word. What it does is providing easy and fast ways to protect against the most common vulnerabilities. Security should never be left out because it is too troublesome to implement.
 
 ### /dev/urandom
-Some might wonder why Amber is using /dev/urandom instead of the seemingly more secure /dev/random.
+Some might wonder why Jantar is using /dev/urandom instead of the seemingly more secure /dev/random.
 Please take some minutes and read this interesting article about [/dev/urandom/](http://www.2uo.de/myths-about-urandom/)
 
 ## Todo List

@@ -1,4 +1,4 @@
-package amber
+package jantar
 
 import (
   "errors"

@@ -1,11 +1,11 @@
-// Amber is a lightweight mvc web framework with emphasis on security written in golang.
+// Jantar is a lightweight mvc web framework with emphasis on security written in golang.
 //
 // It has been largely inspired by Martini(https://github.com/codegangsta/martini) but prefers performance over 
 // syntactic sugar and aims to provide crucial security settings and features right out of the box.
-package amber
+package jantar
 
 import (
-  "github.com/tsurai/amber/context"
+  "github.com/tsurai/jantar/context"
   "os"
   "os/signal"
   "log"
@@ -18,7 +18,7 @@ import (
   "crypto/tls"
 )
 
-// logger is a package global logger instance using the prefix "[amber] " on outputs
+// logger is a package global logger instance using the prefix "[jantar] " on outputs
 var (
   logger *log.Logger
 )
@@ -28,8 +28,8 @@ const (
   TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 uint16 = 0xc030
 )
 
-// Amber is the top level application type
-type Amber struct {
+// Jantar is the top level application type
+type Jantar struct {
   closing     bool
   wg          sync.WaitGroup
   listener    net.Listener
@@ -53,13 +53,13 @@ type Config struct {
   Tls         *TlsConfig
 }
 
-// New creates a new Amber instance ready to listen on a given hostname and port
-func New(config *Config) *Amber {
+// New creates a new Jantar instance ready to listen on a given hostname and port
+func New(config *Config) *Jantar {
   if config == nil {
     logger.Fatal("[Fatal] No config given")
   }
 
-  a := &Amber{
+  a := &Jantar{
     config: config,
     tm: newTemplateManager("views"),
     router: newRouter(),
@@ -76,7 +76,7 @@ func New(config *Config) *Amber {
   }
 
   // create logger
-  logger = log.New(os.Stdout, "[amber] ", 0)
+  logger = log.New(os.Stdout, "[jantar] ", 0)
 
   // load default middleware
   a.AddMiddleware(&csrf{})
@@ -94,7 +94,7 @@ func New(config *Config) *Amber {
   return a
 }
 
-func (a *Amber) loadCertificate() {
+func (a *Jantar) loadCertificate() {
   var err error
   var cert tls.Certificate
   conf := a.config.Tls
@@ -116,26 +116,26 @@ func (a *Amber) loadCertificate() {
 
 // AddMiddleware adds a given middleware to the current middleware list. Middlewares are executed
 // once for every request before the actual route handler is called
-func (a *Amber) AddMiddleware(mware IMiddleware) {
+func (a *Jantar) AddMiddleware(mware IMiddleware) {
   if len(a.middleware) > 0 {
     a.middleware[len(a.middleware)-1].setNext(&mware)
   }
   a.middleware = append(a.middleware, mware)
 }
 
-func (a *Amber) initMiddleware() {
+func (a *Jantar) initMiddleware() {
   for _, mw := range a.middleware {
     mw.Initialize()
   }
 }
 
-func (a *Amber) cleanupMiddleware() {
+func (a *Jantar) cleanupMiddleware() {
  for _, mw := range a.middleware {
     mw.Cleanup()
   } 
 }
 
-func (a *Amber) callMiddleware(respw http.ResponseWriter, req *http.Request) bool {
+func (a *Jantar) callMiddleware(respw http.ResponseWriter, req *http.Request) bool {
   for _, mw := range a.middleware {
     if !mw.Call(respw, req) {
       return false
@@ -149,7 +149,7 @@ func (a *Amber) callMiddleware(respw http.ResponseWriter, req *http.Request) boo
 }
 
 // AddRoute adds a route with given method, pattern and handler to the Router
-func (a *Amber) AddRoute(method string, pattern string, handler interface{}) *route {
+func (a *Jantar) AddRoute(method string, pattern string, handler interface{}) *route {
   return a.router.addRoute(method, pattern, handler)
 }
 
@@ -174,7 +174,7 @@ func servePublic(rw http.ResponseWriter, req *http.Request) {
   http.NotFound(rw, req)
 }
 
-func (a *Amber) listenForSignals() {
+func (a *Jantar) listenForSignals() {
   sigChan := make(chan os.Signal, 1)
 
   signal.Notify(sigChan, os.Interrupt, os.Kill)
@@ -187,7 +187,7 @@ func (a *Amber) listenForSignals() {
   a.Stop()
 }
 
-func (a *Amber) listenAndServe(addr string, handler http.Handler) error {
+func (a *Jantar) listenAndServe(addr string, handler http.Handler) error {
   if addr == "" {
     addr = ":http"
   }
@@ -241,7 +241,7 @@ func (a *Amber) listenAndServe(addr string, handler http.Handler) error {
 }
 
 // ServeHTTP implements the http.Handler interface
-func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
+func (a *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
   a.wg.Add(1)
 
   t0 := time.Now()
@@ -274,7 +274,7 @@ func (a *Amber) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 }
 
 // Stop closes the listener and stops the server when all pending requests have been finished
-func (a *Amber) Stop() {
+func (a *Jantar) Stop() {
   a.closing = true
 
   // stop listening for new connections
@@ -287,7 +287,7 @@ func (a *Amber) Stop() {
 }
 
 // Run starts the http server and listens on the hostname and port given to New
-func (a *Amber) Run() {
+func (a *Jantar) Run() {
   a.initMiddleware()
 
   if err := a.tm.loadTemplates(); err != nil {

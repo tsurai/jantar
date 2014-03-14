@@ -1,7 +1,7 @@
-package amber
+package jantar
 
 import(
-  "github.com/tsurai/amber/context"
+  "github.com/tsurai/jantar/context"
   "strings"
   "net/url"
   "net/http"
