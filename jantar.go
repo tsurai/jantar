@@ -59,7 +59,7 @@ func New(config *Config) *Jantar {
     logger.Fatal("[Fatal] No config given")
   }
 
-  a := &Jantar{
+  j := &Jantar{
     config: config,
     tm: newTemplateManager("views"),
     router: newRouter(),
@@ -67,37 +67,34 @@ func New(config *Config) *Jantar {
     closing: false,
   }
 
-  if a.config.Port < 1 {
-    if a.config.Tls == nil {
-      a.config.Port = 80
+  if j.config.Port < 1 {
+    if j.config.Tls == nil {
+      j.config.Port = 80
     } else {
-      a.config.Port = 443
+      j.config.Port = 443
     }
   }
 
-  // create logger
-  logger = log.New(os.Stdout, "[jantar] ", 0)
-
   // load default middleware
-  a.AddMiddleware(&csrf{})
+  j.AddMiddleware(&csrf{})
 
   // load ssl certificate
   if config.Tls != nil {
-    a.loadCertificate()
+    j.loadCertificate()
   }
   
-  context.SetGlobal("TemplateManager", a.tm)
-  context.SetGlobal("Router", a.router)
+  context.SetGlobal("TemplateManager", j.tm)
+  context.SetGlobal("Router", j.router)
 
-  a.AddRoute("GET", "/public/.+", servePublic)
+  j.AddRoute("GET", "/public/.+", servePublic)
 
-  return a
+  return j
 }
 
-func (a *Jantar) loadCertificate() {
+func (j *Jantar) loadCertificate() {
   var err error
   var cert tls.Certificate
-  conf := a.config.Tls
+  conf := j.config.Tls
 
   if conf.CertFile != "" && conf.KeyFile != "" {
     cert, err = tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
@@ -111,32 +108,32 @@ func (a *Jantar) loadCertificate() {
     logger.Fatal("[Fatal] Can't load X509 certificate. Reason: ", err)
   }
 
-  a.config.Tls.cert = cert
+  j.config.Tls.cert = cert
 }
 
 // AddMiddleware adds a given middleware to the current middleware list. Middlewares are executed
 // once for every request before the actual route handler is called
-func (a *Jantar) AddMiddleware(mware IMiddleware) {
-  if len(a.middleware) > 0 {
-    a.middleware[len(a.middleware)-1].setNext(&mware)
+func (j *Jantar) AddMiddleware(mware IMiddleware) {
+  if len(j.middleware) > 0 {
+    j.middleware[len(j.middleware)-1].setNext(&mware)
   }
-  a.middleware = append(a.middleware, mware)
+  j.middleware = append(j.middleware, mware)
 }
 
-func (a *Jantar) initMiddleware() {
-  for _, mw := range a.middleware {
+func (j *Jantar) initMiddleware() {
+  for _, mw := range j.middleware {
     mw.Initialize()
   }
 }
 
-func (a *Jantar) cleanupMiddleware() {
- for _, mw := range a.middleware {
+func (j *Jantar) cleanupMiddleware() {
+ for _, mw := range j.middleware {
     mw.Cleanup()
   } 
 }
 
-func (a *Jantar) callMiddleware(respw http.ResponseWriter, req *http.Request) bool {
-  for _, mw := range a.middleware {
+func (j *Jantar) callMiddleware(respw http.ResponseWriter, req *http.Request) bool {
+  for _, mw := range j.middleware {
     if !mw.Call(respw, req) {
       return false
     }
@@ -149,8 +146,8 @@ func (a *Jantar) callMiddleware(respw http.ResponseWriter, req *http.Request) bo
 }
 
 // AddRoute adds a route with given method, pattern and handler to the Router
-func (a *Jantar) AddRoute(method string, pattern string, handler interface{}) *route {
-  return a.router.addRoute(method, pattern, handler)
+func (j *Jantar) AddRoute(method string, pattern string, handler interface{}) *route {
+  return j.router.addRoute(method, pattern, handler)
 }
 
 func servePublic(rw http.ResponseWriter, req *http.Request) {
@@ -174,7 +171,7 @@ func servePublic(rw http.ResponseWriter, req *http.Request) {
   http.NotFound(rw, req)
 }
 
-func (a *Jantar) listenForSignals() {
+func (j *Jantar) listenForSignals() {
   sigChan := make(chan os.Signal, 1)
 
   signal.Notify(sigChan, os.Interrupt, os.Kill)
@@ -184,10 +181,10 @@ func (a *Jantar) listenForSignals() {
     logger.Println("[Fatal] Got SIGKILL")
   }
 
-  a.Stop()
+  j.Stop()
 }
 
-func (a *Jantar) listenAndServe(addr string, handler http.Handler) error {
+func (j *Jantar) listenAndServe(addr string, handler http.Handler) error {
   if addr == "" {
     addr = ":http"
   }
@@ -196,10 +193,10 @@ func (a *Jantar) listenAndServe(addr string, handler http.Handler) error {
   
   var err error
 
-  if a.config.Tls != nil {
+  if j.config.Tls != nil {
     // configure tls with secure settings
-    a.listener, err = tls.Listen("tcp", addr, &tls.Config{
-      Certificates: []tls.Certificate{a.config.Tls.cert},
+    j.listener, err = tls.Listen("tcp", addr, &tls.Config{
+      Certificates: []tls.Certificate{j.config.Tls.cert},
       CipherSuites: []uint16{
         TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
         TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -219,21 +216,21 @@ func (a *Jantar) listenAndServe(addr string, handler http.Handler) error {
     })
 
     // listen redirect port 80 to 443 if using the standard port
-    if a.config.Port == 443 {
-      go http.ListenAndServe(fmt.Sprintf("%s:%d", a.config.Hostname, 80), http.HandlerFunc(
+    if j.config.Port == 443 {
+      go http.ListenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, 80), http.HandlerFunc(
         func(respw http.ResponseWriter, req *http.Request) {
-          http.Redirect(respw, req, "https://" + a.config.Hostname + req.RequestURI, 301)
+          http.Redirect(respw, req, "https://" + j.config.Hostname + req.RequestURI, 301)
         }))
     }
    } else {
-   a.listener, err = net.Listen("tcp", addr) 
+   j.listener, err = net.Listen("tcp", addr) 
   }
 
   if err != nil {
     return err
   }
 
-  if err = server.Serve(a.listener); !a.closing {
+  if err = server.Serve(j.listener); !j.closing {
     return err
   } 
 
@@ -241,8 +238,8 @@ func (a *Jantar) listenAndServe(addr string, handler http.Handler) error {
 }
 
 // ServeHTTP implements the http.Handler interface
-func (a *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
-  a.wg.Add(1)
+func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
+  j.wg.Add(1)
 
   t0 := time.Now()
 
@@ -258,8 +255,8 @@ func (a *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
   respw.Header().Set("X-XSS-Protection", "1;mode=block")
   respw.Header().Set("X-Content-Type-Options", "nosniff")
 
-  if route := a.router.searchRoute(req); route != nil {
-    if a.callMiddleware(respw, req) {
+  if route := j.router.searchRoute(req); route != nil {
+    if j.callMiddleware(respw, req) {
       route.handler(respw, req)
     }
   } else {
@@ -270,35 +267,35 @@ func (a *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
   context.ClearData(req)
   logger.Printf("Completed in %v", time.Since(t0))
 
-  a.wg.Done()
+  j.wg.Done()
 }
 
 // Stop closes the listener and stops the server when all pending requests have been finished
-func (a *Jantar) Stop() {
-  a.closing = true
+func (j *Jantar) Stop() {
+  j.closing = true
 
   // stop listening for new connections
-  a.listener.Close()
+  j.listener.Close()
 
   // wait until all pending requests have been finished
-  a.wg.Wait()
+  j.wg.Wait()
 
-  a.cleanupMiddleware()
+  j.cleanupMiddleware()
 }
 
 // Run starts the http server and listens on the hostname and port given to New
-func (a *Jantar) Run() {
-  a.initMiddleware()
+func (j *Jantar) Run() {
+  j.initMiddleware()
 
-  if err := a.tm.loadTemplates(); err != nil {
+  if err := j.tm.loadTemplates(); err != nil {
     logger.Fatal("[Fatal]", err)
   }
 
-  go a.listenForSignals()
+  go j.listenForSignals()
   
-  logger.Println("Starting server & listening on port", a.config.Port)
+  logger.Println("Starting server & listening on port", j.config.Port)
   
-  if err := a.listenAndServe(fmt.Sprintf("%s:%d", a.config.Hostname, a.config.Port), a); err != nil {
+  if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
     logger.Println(err)
   }
   
