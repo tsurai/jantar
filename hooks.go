@@ -5,6 +5,8 @@ import (
   "reflect"
 )
 
+// TODO: add hook fire function
+
 var (
   ErrHookDuplicateID     = errors.New("id already in use")
   ErrHookUnknownID       = errors.New("unknown hook Id")

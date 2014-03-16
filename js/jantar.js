@@ -83,8 +83,6 @@ function clickjacking_protection() {
 }
 
 window.onload = function() {
-  clickjacking_protection();
-
   var csrf_token = get_csrf_token();
   if(csrf_token != "") {
     insert_csrf_token_into_links(csrf_token);

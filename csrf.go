@@ -39,7 +39,7 @@ func (c *csrf) Initialize() {
   // add all hooks to TemplateManger
   tm := context.GetGlobal("TemplateManager").(*TemplateManager)
   if tm == nil {
-    logger.Fatal("[Fatal] Failed to get template manager")
+    logger.Fatal("Failed to get template manager")
   }
 
   tm.AddTmplFunc("csrfToken", func() string { return "" })
@@ -63,36 +63,32 @@ func (c *csrf) Cleanup() {
 func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
   uniqueID := make([]byte, 32)
   
-  if cookie, err := req.Cookie("AMBER_ID"); err == nil {
+  if cookie, err := req.Cookie("JANTAR_ID"); err == nil {
     if m, err := url.ParseQuery(cookie.Value); err == nil {
-      uniqueID = []byte(m["id"][0])
+      uniqueID, _ = base64.StdEncoding.DecodeString(m["id"][0])
     }
   } else {
     if n, err := rand.Read(uniqueID); n != 32 || err != nil {
-      logger.Fatal("[Fatal] Failed to generate secret key.")
+      logger.Fatal("Failed to generate secret key")
     }
 
-    http.SetCookie(respw, &http.Cookie{Name: "AMBER_ID", Value: "id=" + base64.StdEncoding.EncodeToString(uniqueID)})
+    http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: "id=" + base64.StdEncoding.EncodeToString(uniqueID)})
   }
 
-  tokenString := req.PostFormValue("_csrf-token")
-  if tokenString == "" {
-    context.Set(req, "_csrf", base64.StdEncoding.EncodeToString(generateToken(string(uniqueID))))
-    return true
-  }
+  context.Set(req, "_csrf", base64.StdEncoding.EncodeToString(generateToken(uniqueID)))
 
   if req.Method == "GET" || req.Method == "HEAD" {
     return true
   }
 
-  token, _ := base64.StdEncoding.DecodeString(tokenString)
-  if hmac.Equal(token, generateToken(string(uniqueID))) {
+  token, _ := base64.StdEncoding.DecodeString(req.PostFormValue("_csrf-token"))
+  if hmac.Equal(token, generateToken(uniqueID)) {
     return true
   }
 
   /* TODO: use error handler as parameter */
   noAccess(respw, req)
-  logger.Println("CSRF Detected! IP:", req.RemoteAddr)
+  logger.DataErrorf(JLData{"IP": req.RemoteAddr}, "CSRF detected!")
 
   /* log ip etc pp */
   return false
@@ -102,13 +98,13 @@ func generateSecretKey() {
   secretKey = make([]byte, secretLength)
 
   if n, err := rand.Read(secretKey); n != secretLength || err != nil {
-    logger.Fatal("[Fatal] Failed to generate secret key.")
+    logger.Fatal("Failed to generate secret key")
   }
 }
 
-func generateToken(sessionID string) []byte {
+func generateToken(uniqueID []byte) []byte {
   mac := hmac.New(sha512.New, secretKey)
-  mac.Write([]byte(sessionID))
+  mac.Write(uniqueID)
   
   return mac.Sum(nil)
 }

@@ -8,7 +8,6 @@ import (
   "github.com/tsurai/jantar/context"
   "os"
   "os/signal"
-  "log"
   "fmt"
   "net"
   "time"
@@ -20,7 +19,7 @@ import (
 
 // logger is a package global logger instance using the prefix "[jantar] " on outputs
 var (
-  logger *log.Logger
+  logger *JLogger
 )
 
 const (
@@ -55,8 +54,11 @@ type Config struct {
 
 // New creates a new Jantar instance ready to listen on a given hostname and port
 func New(config *Config) *Jantar {
+  // create logger
+  logger = NewJLogger(os.Stdout, "", level_debug)
+
   if config == nil {
-    logger.Fatal("[Fatal] No config given")
+    logger.Fatal("No config given")
   }
 
   j := &Jantar{
@@ -101,11 +103,11 @@ func (j *Jantar) loadCertificate() {
   } else if conf.CertPem != nil && conf.KeyPem != nil {
     cert, err = tls.X509KeyPair(conf.CertPem, conf.KeyPem)
   } else {
-    logger.Fatal("[Fatal] Can't load X509 certificate. Reason: Missing parameter")
+    logger.Fatal("Can't load X509 certificate. Reason: Missing parameter")
   }
 
   if err != nil {
-    logger.Fatal("[Fatal] Can't load X509 certificate. Reason: ", err)
+    logger.Fatalf("Can't load X509 certificate. Reason: %s", err)
   }
 
   j.config.Tls.cert = cert
@@ -178,7 +180,7 @@ func (j *Jantar) listenForSignals() {
 
   s := <-sigChan
   if s == os.Kill {
-    logger.Println("[Fatal] Got SIGKILL")
+    logger.Fatal("Got SIGKILL")
   }
 
   j.Stop()
@@ -247,7 +249,7 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
     req.Method = method
   }
 
-  logger.Printf("%s %s", req.Method, req.RequestURI)
+  logger.Infof("%s %s", req.Method, req.RequestURI)
 
   // set security header
   respw.Header().Set("Strict-Transport-Security", "max-age=31536000;includeSubDomains")
@@ -260,12 +262,12 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
       route.handler(respw, req)
     }
   } else {
-    logger.Printf("404 page not found")
+    logger.Info("404 page not found")
     http.NotFound(respw, req)
   }
 
   context.ClearData(req)
-  logger.Printf("Completed in %v", time.Since(t0))
+  logger.Infof("Completed in %v", time.Since(t0))
 
   j.wg.Done()
 }
@@ -288,16 +290,16 @@ func (j *Jantar) Run() {
   j.initMiddleware()
 
   if err := j.tm.loadTemplates(); err != nil {
-    logger.Fatal("[Fatal]", err)
+    logger.Error(err)
   }
 
   go j.listenForSignals()
   
-  logger.Println("Starting server & listening on port", j.config.Port)
+  logger.Infof("Starting server & listening on port %d", j.config.Port)
   
   if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
-    logger.Println(err)
+    logger.Info(err)
   }
   
-  logger.Println("Stopping server")
+  logger.Info("Stopping server")
 }
