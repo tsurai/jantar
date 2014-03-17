@@ -44,16 +44,16 @@ import (
 )
 
 func main() {
-	a := jantar.New(&jantar.Config {
+  j := jantar.New(&jantar.Config {
     Hostname: "localhost",
     Port:     3000,
   })
 
-  a.AddRoute("GET", "/", func(respw http.ResponseWriter, req *http.Request) {
+  j.AddRoute("GET", "/", func(respw http.ResponseWriter, req *http.Request) {
     respw.Write([]byte("Hello World"))
   })
 
-	a.Run()
+	j.Run()
 }
 ```
 
@@ -101,14 +101,14 @@ import (
 )
 
 func main() {
-	a := jantar.New(&jantar.Config {
+	j := jantar.New(&jantar.Config {
     Hostname: "localhost",
     Port:     3000,
   })
 
-	a.AddRoute("GET", "/", jantar.CallController((*c.App).Index))
+	j.AddRoute("GET", "/", jantar.CallController((*c.App).Index))
 
-	a.Run()
+	j.Run()
 }
 
 ```
