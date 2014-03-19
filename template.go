@@ -16,9 +16,7 @@ import (
 )
 
 const (
-  // TmBeforeParse is a hook with callback f(tm *TemplateManager, name string, data string)
   TmBeforeParse = iota
-  // TmBeforeRender is a hook with callback f(req *http.Request, tm *TemplateManager, tmpl *html.Template, args map[string]interface{})
   TmBeforeRender = iota
   tmLast = iota
 )

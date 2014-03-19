@@ -28,11 +28,12 @@ func (h *hooks) registerHook(hookID int, signiture reflect.Type) error {
   }
 
   if _, ok := h.list[hookID]; ok {
+    logger.Errord(JLData{"id": HookID}, "Failed to register hook: id already in use")
     return ErrHookDuplicateID
   }
 
   if signiture.Kind() != reflect.Func {
-    logger.Errord(JLData{"signiture": signiture}, "Signiture is not a function")
+    logger.Errord(JLData{"signiture": signiture}, "Failed to register hook: signiture is not a function")
     return ErrHookInvalidHandler
   }
 
@@ -44,6 +45,7 @@ func (h *hooks) registerHook(hookID int, signiture reflect.Type) error {
 func (h *hooks) getHooks(hookID int) []interface{} {
   hook, ok := h.list[hookID]
   if !ok {
+    logger.Errord(JLData{"id": HookID}, "Failed to get hook: unknown id")
     return nil
   }
 
@@ -53,11 +55,12 @@ func (h *hooks) getHooks(hookID int) []interface{} {
 func (h *hooks) AddHook(hookID int, handler interface{}) error {
   hook, ok := h.list[hookID]
   if !ok {
+    logger.Errord(JLData{"id": hookID}, "Failed to add hook: unknown id")
     return ErrHookUnknownID
   }
 
   if !reflect.TypeOf(handler).AssignableTo(hook.signiture) {
-    logger.Errord(JLData{"given": reflect.TypeOf(handler), "wanted": hook.signiture}, "Handler type doesn't match the signiture")
+    logger.Errord(JLData{"given": reflect.TypeOf(handler), "wanted": hook.signiture}, "Failed to add hook: handler type doesn't match the signiture")
     return ErrHookInvalidHandler
   }
 

@@ -44,13 +44,8 @@ func (c *csrf) Initialize() {
 
   tm.AddTmplFunc("csrfToken", func() string { return "" })
 
-  if err := tm.AddHook(TmBeforeParse, beforeParseHook); err != nil {
-    logger.Fatal(err)
-  }
-
-  if err := tm.AddHook(TmBeforeRender, beforeRenderHook); err != nil {
-    logger.Fatal(err)
-  }
+  tm.AddHook(TmBeforeParse, beforeParseHook)
+  tm.AddHook(TmBeforeRender, beforeRenderHook)
 }
 
 // Cleanup saves the current secretkey to accept old tokens with the next start
