@@ -15,6 +15,7 @@ Jantar is a lightweight mvc web framework with emphasis on security written in g
 	* X-Content-Type-Options: nosniff
 * Encrypted and signed cookies using AES256 and HMAC(SHA256)
 * Simple Middleware interface
+* Compatible with http.HandlerFunc
 
 ## Table of Contents
 * [Current State](#current-state)
