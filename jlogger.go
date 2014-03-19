@@ -13,6 +13,7 @@ const (
 	level_warning = iota
 	level_error   = iota
 	level_fatal 	= iota
+	level_panic		= iota
 
 	nocolor = 0
 	red 		= 31
@@ -40,8 +41,10 @@ func levelToColor(level uint) int {
 	case level_warning:
 		return yellow
 	case level_error:
-		return red
+		fallthrough
 	case level_fatal:
+		fallthrough
+	case level_panic:
 		return red
 	default:
 		return nocolor
@@ -60,6 +63,8 @@ func levelToString(level uint) string {
 		return "ERRO"
 	case level_fatal:
 		return "FATA"
+	case level_panic:
+		return "PANI"
 	default:
 		return "Unknown"
 	}
@@ -74,95 +79,143 @@ func NewJLogger(out io.Writer, prefix string, minlevel uint) *JLogger {
 	return &JLogger{log.New(out, prefix, 0), minlevel, ansiMode}
 }
 
-func (l *JLogger) DataInfof(data JLData, format string, v ...interface{}) {
-	l.printData(fmt.Sprintf(format, v...), level_info, data)
+func (l *JLogger) Infodf(data JLData, format string, v ...interface{}) {
+	l.printData(level_info, data, fmt.Sprintf(format, v...))
 }
 
-func (l *JLogger) DataDebugf(data JLData, format string, v ...interface{}) {
-	l.printData(fmt.Sprintf(format, v...), level_debug, data)
+func (l *JLogger) Debugdf(data JLData, format string, v ...interface{}) {
+	l.printData(level_debug, data, fmt.Sprintf(format, v...))
 }
 
-func (l *JLogger) DataWarningf(data JLData, format string, v ...interface{}) {
-	l.printData(fmt.Sprintf(format, v...), level_warning, data)
+func (l *JLogger) Warningdf(data JLData, format string, v ...interface{}) {
+	l.printData(level_warning, data, fmt.Sprintf(format, v...))
 }
 
-func (l *JLogger) DataErrorf(data JLData, format string, v ...interface{}) {
-	l.printData(fmt.Sprintf(format, v...), level_error, data)
+func (l *JLogger) Errordf(data JLData, format string, v ...interface{}) {
+	l.printData(level_error, data, fmt.Sprintf(format, v...))
 }
 
-func (l *JLogger) DataFatalf(data JLData, format string, v ...interface{}) {
-	l.printData(fmt.Sprintf(format, v...), level_fatal, data)
+func (l *JLogger) Fataldf(data JLData, format string, v ...interface{}) {
+	l.printData(level_fatal, data, fmt.Sprintf(format, v...))
+}
+
+func (l *JLogger) Panicdf(data JLData, format string, v ...interface{}) {
+	l.printData(level_panic, data, fmt.Sprintf(format, v...))	
 }
 
 func (l *JLogger) Infof(format string, v ...interface{}) {
-	l.printLevel(fmt.Sprintf(format, v...), level_info)
+	l.print(level_info, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Debugf(format string, v ...interface{}) {
-	l.printLevel(fmt.Sprintf(format, v...), level_debug)
+	l.print(level_debug, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Warningf(format string, v ...interface{}) {
-	l.printLevel(fmt.Sprintf(format, v...), level_warning)
+	l.print(level_warning, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Errorf(format string, v ...interface{}) {
-	l.printLevel(fmt.Sprintf(format, v...), level_fatal)
+	l.print(level_fatal, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Fatalf(format string, v ...interface{}) {
-	l.printLevel(fmt.Sprintf(format, v...), level_fatal)
+	l.print(level_fatal, fmt.Sprintf(format, v...))
 }
 
-func (l *JLogger) Info(v interface{}) {
-	l.printLevel(v, level_info)
+func (l *JLogger) Panicf(format string, v ...interface{}) {
+	l.print(level_panic, fmt.Sprintf(format, v...))
 }
 
-func (l *JLogger) Debug(v interface{}) {
-	l.printLevel(v, level_debug)
+func (l *JLogger) Infod(data JLData, v ...interface{}) {
+	l.printData(level_info, data, fmt.Sprint(v...))
 }
 
-func (l *JLogger) Warning(v interface{}) {
-	l.printLevel(v, level_warning)
+func (l *JLogger) Debugd(data JLData, v ...interface{}) {
+	l.printData(level_debug, data, fmt.Sprint(v...))
 }
 
-func (l *JLogger) Error(v interface{}) {
-	l.printLevel(v, level_fatal)
+func (l *JLogger) Warningd(data JLData, v ...interface{}) {
+	l.printData(level_warning, data, fmt.Sprint(v...))
 }
 
-func (l *JLogger) Fatal(v interface{}) {
-	l.printLevel(v, level_fatal)
+func (l *JLogger) Errord(data JLData, v ...interface{}) {
+	l.printData(level_error, data, fmt.Sprint(v...))
 }
 
-func (l *JLogger) printData(v interface{}, level uint, data JLData) {
+func (l *JLogger) Fatald(data JLData, v ...interface{}) {
+	l.printData(level_fatal, data, fmt.Sprint(v...))
+}
+
+func (l *JLogger) Panicd(data JLData, v ...interface{}) {
+	l.printData(level_panic, data, fmt.Sprint(v...))	
+}
+
+func (l *JLogger) Info(v ...interface{}) {
+	l.print(level_info, fmt.Sprint(v...))
+}
+
+func (l *JLogger) Debug(v ...interface{}) {
+	l.print(level_debug, fmt.Sprint(v...))
+}
+
+func (l *JLogger) Warning(v ...interface{}) {
+	l.print(level_warning, fmt.Sprint(v...))
+}
+
+func (l *JLogger) Error(v ...interface{}) {
+	l.print(level_error, fmt.Sprint(v...))
+}
+
+func (l *JLogger) Fatal(v ...interface{}) {
+	l.print(level_fatal, fmt.Sprint(v...))
+}
+
+func (l *JLogger) Panic(v ...interface{}) {
+	l.print(level_panic, fmt.Sprint(v...))
+}
+
+func (l *JLogger) printData(level uint, data JLData, msg string) {
 	if level >= l.minlevel {
 		if l.ansiMode {
 			color := levelToColor(level)
-			msg := fmt.Sprintf("\x1b[%dm[%s]\x1b[0m %v\n       \x1b[%[1]dm→ ", color, levelToString(level), v)
+			out := fmt.Sprintf("\x1b[%dm[%s]\x1b[0m %s\n     \x1b[%[1]dm→ ", color, levelToString(level), msg)
 
 			for key, val := range data {
-				msg += fmt.Sprintf("\x1b[%dm%v\x1b[0m=%v ", color, key, val)
+				out += fmt.Sprintf("\x1b[%dm%v\x1b[0m=%v ", color, key, val)
 			}
 
-			l.log.Output(2, msg)
+			l.log.Output(2, out)
 		} else {
-			msg := fmt.Sprintf("[%s] %v\n       ", levelToString(level), v)
+			out := fmt.Sprintf("[%s] %s\n     → ", levelToString(level), msg)
 			
 			for key, val := range data {
-				msg += fmt.Sprintf("%v=%v ", key, val)
+				out += fmt.Sprintf("%v=%v ", key, val)
 			}
 
-			l.log.Output(2, msg)
+			l.log.Output(2, out)
+		}
+
+		if level == level_fatal {
+			os.Exit(1)
+		} else if level == level_panic {
+			panic(msg)
 		}
 	}
 }
 
-func (l *JLogger) printLevel(v interface{}, level uint) {
+func (l *JLogger) print(level uint, msg string) {
 	if level >= l.minlevel {
 		if l.ansiMode {
-			l.log.Output(2, fmt.Sprintf("\x1b[%dm[%s]\x1b[0m %v\n", levelToColor(level), levelToString(level), v))
+			l.log.Output(2, fmt.Sprintf("\x1b[%dm[%s]\x1b[0m %s", levelToColor(level), levelToString(level), msg))
 		} else {
-			l.log.Output(2, fmt.Sprintf("[%s] %v", levelToString(level), v))
+			l.log.Output(2, fmt.Sprintf("[%s] %s", levelToString(level), msg))
+		}
+
+		if level == level_fatal {
+			os.Exit(1)
+		} else if level == level_panic {
+			panic(msg)
 		}
 	}
 }

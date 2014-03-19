@@ -88,7 +88,7 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
 
   /* TODO: use error handler as parameter */
   noAccess(respw, req)
-  logger.DataErrorf(JLData{"IP": req.RemoteAddr}, "CSRF detected!")
+  logger.Errord(JLData{"IP": req.RemoteAddr}, "CSRF detected!")
 
   /* log ip etc pp */
   return false

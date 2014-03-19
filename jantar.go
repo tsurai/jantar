@@ -52,7 +52,8 @@ type Config struct {
   Tls         *TlsConfig
 }
 
-// New creates a new Jantar instance ready to listen on a given hostname and port
+// New creates a new Jantar instance ready to listen on a given hostname and port.
+// Choosing a port small than 1 will cause Jantar to use the standard ports.
 func New(config *Config) *Jantar {
   // create logger
   logger = NewJLogger(os.Stdout, "", level_debug)
@@ -294,8 +295,8 @@ func (j *Jantar) Run() {
   }
 
   go j.listenForSignals()
-  
-  logger.Infof("Starting server & listening on port %d", j.config.Port)
+
+  logger.Infod(JLData{"Hostname": j.config.Hostname, "Port": j.config.Port}, "Starting server & listening")
   
   if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
     logger.Info(err)

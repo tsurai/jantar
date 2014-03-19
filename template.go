@@ -5,6 +5,7 @@ import (
   "os"
   "fmt"
   "time"
+  "reflect"
   "strings"
   "strconv"
   "net/http"
@@ -130,11 +131,10 @@ func newTemplateManager(directory string) *TemplateManager {
   tm := &TemplateManager{directory: directory, tmplFuncs: funcs}
   
   // register hooks
-  for i := 0; i < tmLast; i++ {
-    if err := tm.registerHookID(i); err != nil {
-      panic("Failed to register hook." + err.Error())
-    }
-  }
+  tm.registerHook(TmBeforeParse, reflect.TypeOf(
+    (func(*TemplateManager, string, *[]byte))(nil)))
+  tm.registerHook(TmBeforeRender, reflect.TypeOf(
+    (func(*http.Request, *TemplateManager, *template.Template, map[string]interface{}))(nil)))
 
   return tm
 }
