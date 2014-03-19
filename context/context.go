@@ -8,6 +8,8 @@ import (
   "net/http"
 )
 
+// TODO: add special read-only module data and add read-only mode to the normal data stores as well
+
 var (
   globalData = make(map[interface{}]interface{})
   requestData = make(map[*http.Request]map[interface{}]interface{})

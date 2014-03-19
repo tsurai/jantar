@@ -28,7 +28,7 @@ func (h *hooks) registerHook(hookID int, signiture reflect.Type) error {
   }
 
   if _, ok := h.list[hookID]; ok {
-    logger.Errord(JLData{"id": HookID}, "Failed to register hook: id already in use")
+    logger.Errord(JLData{"id": hookID}, "Failed to register hook: id already in use")
     return ErrHookDuplicateID
   }
 
@@ -45,7 +45,7 @@ func (h *hooks) registerHook(hookID int, signiture reflect.Type) error {
 func (h *hooks) getHooks(hookID int) []interface{} {
   hook, ok := h.list[hookID]
   if !ok {
-    logger.Errord(JLData{"id": HookID}, "Failed to get hook: unknown id")
+    logger.Errord(JLData{"id": hookID}, "Failed to get hook: unknown id")
     return nil
   }
 

@@ -104,11 +104,11 @@ func (j *Jantar) loadCertificate() {
   } else if conf.CertPem != nil && conf.KeyPem != nil {
     cert, err = tls.X509KeyPair(conf.CertPem, conf.KeyPem)
   } else {
-    logger.Fatal("Can't load X509 certificate. Reason: Missing parameter")
+    logger.Fatal("Failed to load X509 certificate: missing parameter")
   }
 
   if err != nil {
-    logger.Fatalf("Can't load X509 certificate. Reason: %s", err)
+    logger.Fatald(JLData{"error": err}, "Failed to load X509 certificate", err)
   }
 
   j.config.Tls.cert = cert
@@ -296,7 +296,7 @@ func (j *Jantar) Run() {
 
   go j.listenForSignals()
 
-  logger.Infod(JLData{"Hostname": j.config.Hostname, "Port": j.config.Port}, "Starting server & listening")
+  logger.Infod(JLData{"Hostname": j.config.Hostname, "Port": j.config.Port, "TLS": j.config.Tls != nil}, "Starting server & listening")
   
   if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
     logger.Info(err)
