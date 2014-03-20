@@ -58,7 +58,7 @@ func (r *router) searchRoute(req *http.Request) *route {
           params[route.regex.SubexpNames()[n]] = matches[i]
         }
         
-        context.Set(req, "UrlParam", params)
+        context.Set(req, "UrlParam", params, false)
         return r.routes[i]
       }
     }

@@ -1,7 +1,6 @@
 package jantar
 
 import (
-  "github.com/tsurai/jantar/context"
   "os"
   "fmt"
   "time"
@@ -59,7 +58,7 @@ func newTemplateManager(directory string) *TemplateManager {
       return template.HTML(str)
     },
     "url": func(name string, args ...interface{}) string {
-      router := context.GetGlobal("Router").(*router)
+      router := GetModule(MODULE_ROUTER).(*router)
       return router.getReverseUrl(name, args)
     },/*
     "flash": func(args map[string]interface{}, key string) string {

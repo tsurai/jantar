@@ -37,7 +37,7 @@ func (c *csrf) Initialize() {
   generateSecretKey()
 
   // add all hooks to TemplateManger
-  tm := context.GetGlobal("TemplateManager").(*TemplateManager)
+  tm := GetModule(MODULE_TEMPLATE_MANAGER).(*TemplateManager)
   if tm == nil {
     logger.Fatal("Failed to get template manager")
   }
@@ -70,7 +70,7 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
     http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: "id=" + base64.StdEncoding.EncodeToString(uniqueID)})
   }
 
-  context.Set(req, "_csrf", base64.StdEncoding.EncodeToString(generateToken(uniqueID)))
+  context.Set(req, "_csrf", base64.StdEncoding.EncodeToString(generateToken(uniqueID)), true)
 
   if req.Method == "GET" || req.Method == "HEAD" {
     return true

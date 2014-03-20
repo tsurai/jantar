@@ -1,7 +1,6 @@
-// Context is a small package for arbitrary per-request and global data.
+// Context is a small package for arbitrary per-request, global data and modules
 //
-// For now this basically is a copy of Gorilla/Context but it will be more customized in future versions.
-
+// Module data are set by jantar and are read-only by default.
 package context
 
 import (
@@ -10,39 +9,50 @@ import (
 
 // TODO: add special read-only module data and add read-only mode to the normal data stores as well
 
+type data struct {
+  value     interface{}
+  readOnly  bool
+}
+
 var (
-  globalData = make(map[interface{}]interface{})
-  requestData = make(map[*http.Request]map[interface{}]interface{})
+  globalData = make(map[interface{}]data)
+  requestData = make(map[*http.Request]map[interface{}]data)
 )
 
 // SetGlobal saves a value with given key in the global context
-func SetGlobal(key, val interface{}) {
-  globalData[key] = val
+func SetGlobal(key, value interface{}, readOnly bool) {
+  if gd, ok := globalData[key]; !ok || !gd.readOnly {
+    globalData[key] = data{value, readOnly}
+  }
 }
 
 // GetGlobal searches for a value with given key in the global context and returns it
 func GetGlobal(key interface{}) interface{} {
-  return globalData[key]
+  return globalData[key].value
 }
 
 // GetGlobalOk does the same as GetGlobal but returns an additional boolean indicating if a value with the given key was found
 func GetGlobalOk(key interface{}) (interface{}, bool) {
-  val, ok := globalData[key]
-  return val, ok
+  gd, ok := globalData[key]
+  return gd.value, ok
 }
 
 // Set saves the a value with given key for a specific http.Request
-func Set(req *http.Request, key, val interface{}) {
-  if requestData[req] == nil {
-    requestData[req] = make(map[interface{}]interface{})
+func Set(req *http.Request, key, value interface{}, readOnly bool) {
+  rd, ok := requestData[req]
+  if !ok && rd == nil {
+    requestData[req] = make(map[interface{}]data)
   }
-  requestData[req][key] = val
+
+  if d, ok := rd[key]; !ok || !d.readOnly {
+    requestData[req][key] = data{value, readOnly}
+  }
 }
 
 // Get returns a value with given name and request
 func Get(req *http.Request, key interface{}) interface{} {
   if requestData[req] != nil {
-    return requestData[req][key]
+    return requestData[req][key].value
   }
   return nil
 }
@@ -52,8 +62,9 @@ func GetOk(req *http.Request, key interface{}) (interface{}, bool) {
   if requestData[req] == nil {
     return nil, false
   }
-  val, ok := requestData[req][key]
-  return val, ok
+  
+  d, ok := requestData[req][key]
+  return d.value, ok
 }
 
 func ClearData(req *http.Request) {

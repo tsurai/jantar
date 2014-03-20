@@ -86,8 +86,8 @@ func New(config *Config) *Jantar {
     j.loadCertificate()
   }
   
-  context.SetGlobal("TemplateManager", j.tm)
-  context.SetGlobal("Router", j.router)
+  setModule(MODULE_TEMPLATE_MANAGER, j.tm)
+  setModule(MODULE_ROUTER, j.router)
 
   j.AddRoute("GET", "/public/.+", servePublic)
 
