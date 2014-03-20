@@ -17,9 +17,9 @@ import (
   "crypto/tls"
 )
 
-// logger is a package global logger instance using the prefix "[jantar] " on outputs
+// Log is a package global Log instance using the prefix "[jantar] " on outputs
 var (
-  logger *JLogger
+  Log *JLogger
 )
 
 const (
@@ -55,11 +55,11 @@ type Config struct {
 // New creates a new Jantar instance ready to listen on a given hostname and port.
 // Choosing a port small than 1 will cause Jantar to use the standard ports.
 func New(config *Config) *Jantar {
-  // create logger
-  logger = NewJLogger(os.Stdout, "", level_debug)
+  // create Log
+  Log = NewJLogger(os.Stdout, "", LogLevelInfo)
 
   if config == nil {
-    logger.Fatal("No config given")
+    Log.Fatal("No config given")
   }
 
   j := &Jantar{
@@ -104,11 +104,11 @@ func (j *Jantar) loadCertificate() {
   } else if conf.CertPem != nil && conf.KeyPem != nil {
     cert, err = tls.X509KeyPair(conf.CertPem, conf.KeyPem)
   } else {
-    logger.Fatal("Failed to load X509 certificate: missing parameter")
+    Log.Fatal("Failed to load X509 certificate: missing parameter")
   }
 
   if err != nil {
-    logger.Fatald(JLData{"error": err}, "Failed to load X509 certificate", err)
+    Log.Fatald(JLData{"error": err}, "Failed to load X509 certificate", err)
   }
 
   j.config.Tls.cert = cert
@@ -181,7 +181,7 @@ func (j *Jantar) listenForSignals() {
 
   s := <-sigChan
   if s == os.Kill {
-    logger.Fatal("Got SIGKILL")
+    Log.Fatal("Got SIGKILL")
   }
 
   j.Stop()
@@ -250,7 +250,7 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
     req.Method = method
   }
 
-  logger.Infof("%s %s", req.Method, req.RequestURI)
+  Log.Infof("%s %s", req.Method, req.RequestURI)
 
   // set security header
   respw.Header().Set("Strict-Transport-Security", "max-age=31536000;includeSubDomains")
@@ -263,12 +263,12 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
       route.handler(respw, req)
     }
   } else {
-    logger.Info("404 page not found")
+    Log.Info("404 page not found")
     http.NotFound(respw, req)
   }
 
   context.ClearData(req)
-  logger.Infof("Completed in %v", time.Since(t0))
+  Log.Infof("Completed in %v", time.Since(t0))
 
   j.wg.Done()
 }
@@ -291,16 +291,16 @@ func (j *Jantar) Run() {
   j.initMiddleware()
 
   if err := j.tm.loadTemplates(); err != nil {
-    logger.Error(err)
+    Log.Error(err)
   }
 
   go j.listenForSignals()
 
-  logger.Infod(JLData{"Hostname": j.config.Hostname, "Port": j.config.Port, "TLS": j.config.Tls != nil}, "Starting server & listening")
+  Log.Infod(JLData{"Hostname": j.config.Hostname, "Port": j.config.Port, "TLS": j.config.Tls != nil}, "Starting server & listening")
   
   if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
-    logger.Info(err)
+    Log.Info(err)
   }
   
-  logger.Info("Stopping server")
+  Log.Info("Stopping server")
 }

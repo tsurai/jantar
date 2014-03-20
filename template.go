@@ -142,12 +142,12 @@ func (tm *TemplateManager) watch() {
     select {
     case ev := <- tm.watcher.Event:
       if !ev.IsRename() && filepath.Ext(ev.Name) == ".html" {
-        logger.Debug("Reloading templates")
+        Log.Debug("Reloading templates")
         go tm.loadTemplates()
         return
       }
     case err := <-tm.watcher.Error:
-      logger.Debugf("File Watcher: %s", err)
+      Log.Debugf("File Watcher: %s", err)
       return
     }
   } 
@@ -181,7 +181,7 @@ func (tm *TemplateManager) loadTemplates() error {
 
       // add the current directory to the watcher
       if err = tm.watcher.Watch(path); err != nil {
-        logger.Warningf("Can't watch directory '%s'. Reason: %s\n", path, err.Error())
+        Log.Warningf("Can't watch directory '%s'. Reason: %s\n", path, err.Error())
       }
       return nil
     }

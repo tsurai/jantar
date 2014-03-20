@@ -50,6 +50,6 @@ func (c *Controller) Render() {
   tm := context.GetGlobal("TemplateManager").(*TemplateManager)
 
   if err := tm.RenderTemplate(c.Respw, c.Req, c.name + "/" + c.action + ".html", c.RenderArgs); err != nil {
-    logger.Warning(err.Error())
+    Log.Warning(err.Error())
   }
 }

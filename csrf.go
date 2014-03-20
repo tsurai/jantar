@@ -39,7 +39,7 @@ func (c *csrf) Initialize() {
   // add all hooks to TemplateManger
   tm := GetModule(MODULE_TEMPLATE_MANAGER).(*TemplateManager)
   if tm == nil {
-    logger.Fatal("Failed to get template manager")
+    Log.Fatal("Failed to get template manager")
   }
 
   tm.AddTmplFunc("csrfToken", func() string { return "" })
@@ -64,7 +64,7 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
     }
   } else {
     if n, err := rand.Read(uniqueID); n != 32 || err != nil {
-      logger.Fatal("Failed to generate secret key")
+      Log.Fatal("Failed to generate secret key")
     }
 
     http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: "id=" + base64.StdEncoding.EncodeToString(uniqueID)})
@@ -83,7 +83,7 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
 
   /* TODO: use error handler as parameter */
   noAccess(respw, req)
-  logger.Errord(JLData{"IP": req.RemoteAddr}, "CSRF detected!")
+  Log.Errord(JLData{"IP": req.RemoteAddr}, "CSRF detected!")
 
   /* log ip etc pp */
   return false
@@ -93,7 +93,7 @@ func generateSecretKey() {
   secretKey = make([]byte, secretLength)
 
   if n, err := rand.Read(secretKey); n != secretLength || err != nil {
-    logger.Fatal("Failed to generate secret key")
+    Log.Fatal("Failed to generate secret key")
   }
 }
 

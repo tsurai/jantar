@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	level_debug 	= iota
-	level_info 		= iota
-	level_warning = iota
-	level_error   = iota
-	level_fatal 	= iota
-	level_panic		= iota
+	LogLevelDebug 		= iota
+	LogLevelInfo 		= iota
+	LogLevelWarning 	= iota
+	LogLevelError   	= iota
+	LogLevelFatal 		= iota
+	LogLevelPanic		= iota
 
 	nocolor = 0
 	red 		= 31
@@ -22,10 +22,10 @@ const (
 	blue 		= 34
 )
 
-// JLogger is a simple logger with some handy functions. Largely inspired by https://github.com/Sirupsen/logrus
+// JLogger is a simple Log with some handy functions. Largely inspired by https://github.com/Sirupsen/logrus
 type JLogger struct {
 	log 			*log.Logger
-	minlevel 	uint
+	minLevel 	uint
 	ansiMode	bool
 }
 
@@ -34,17 +34,17 @@ type JLData map[string]interface{}
 
 func levelToColor(level uint) int {
 	switch level {
-	case level_info:
+	case LogLevelInfo:
 		return blue
-	case level_debug:
+	case LogLevelDebug:
 		return green
-	case level_warning:
+	case LogLevelWarning:
 		return yellow
-	case level_error:
+	case LogLevelError:
 		fallthrough
-	case level_fatal:
+	case LogLevelFatal:
 		fallthrough
-	case level_panic:
+	case LogLevelPanic:
 		return red
 	default:
 		return nocolor
@@ -53,130 +53,138 @@ func levelToColor(level uint) int {
 
 func levelToString(level uint) string {
 	switch level {
-	case level_info:
+	case LogLevelInfo:
 		return "INFO"
-	case level_debug:
+	case LogLevelDebug:
 		return "DEBU"
-	case level_warning:
+	case LogLevelWarning:
 		return "WARN"
-	case level_error:
+	case LogLevelError:
 		return "ERRO"
-	case level_fatal:
+	case LogLevelFatal:
 		return "FATA"
-	case level_panic:
+	case LogLevelPanic:
 		return "PANI"
 	default:
 		return "Unknown"
 	}
 }
 
-func NewJLogger(out io.Writer, prefix string, minlevel uint) *JLogger {
+func NewJLogger(out io.Writer, prefix string, minLevel uint) *JLogger {
 	ansiMode := false
 	if isTerminal(os.Stderr.Fd()) {
 		ansiMode = true
 	}
 
-	return &JLogger{log.New(out, prefix, 0), minlevel, ansiMode}
+	return &JLogger{log.New(out, prefix, 0), minLevel, ansiMode}
+}
+
+func (l *JLogger) SetMinLevel(minLevel uint) {
+	if minLevel < LogLevelInfo || minLevel > LogLevelPanic {
+		l.minLevel = LogLevelInfo
+	} else {
+		l.minLevel = minLevel
+	}
 }
 
 func (l *JLogger) Infodf(data JLData, format string, v ...interface{}) {
-	l.printData(level_info, data, fmt.Sprintf(format, v...))
+	l.printData(LogLevelInfo, data, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Debugdf(data JLData, format string, v ...interface{}) {
-	l.printData(level_debug, data, fmt.Sprintf(format, v...))
+	l.printData(LogLevelDebug, data, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Warningdf(data JLData, format string, v ...interface{}) {
-	l.printData(level_warning, data, fmt.Sprintf(format, v...))
+	l.printData(LogLevelWarning, data, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Errordf(data JLData, format string, v ...interface{}) {
-	l.printData(level_error, data, fmt.Sprintf(format, v...))
+	l.printData(LogLevelError, data, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Fataldf(data JLData, format string, v ...interface{}) {
-	l.printData(level_fatal, data, fmt.Sprintf(format, v...))
+	l.printData(LogLevelFatal, data, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Panicdf(data JLData, format string, v ...interface{}) {
-	l.printData(level_panic, data, fmt.Sprintf(format, v...))	
+	l.printData(LogLevelPanic, data, fmt.Sprintf(format, v...))	
 }
 
 func (l *JLogger) Infof(format string, v ...interface{}) {
-	l.print(level_info, fmt.Sprintf(format, v...))
+	l.print(LogLevelInfo, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Debugf(format string, v ...interface{}) {
-	l.print(level_debug, fmt.Sprintf(format, v...))
+	l.print(LogLevelDebug, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Warningf(format string, v ...interface{}) {
-	l.print(level_warning, fmt.Sprintf(format, v...))
+	l.print(LogLevelWarning, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Errorf(format string, v ...interface{}) {
-	l.print(level_fatal, fmt.Sprintf(format, v...))
+	l.print(LogLevelFatal, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Fatalf(format string, v ...interface{}) {
-	l.print(level_fatal, fmt.Sprintf(format, v...))
+	l.print(LogLevelFatal, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Panicf(format string, v ...interface{}) {
-	l.print(level_panic, fmt.Sprintf(format, v...))
+	l.print(LogLevelPanic, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Infod(data JLData, v ...interface{}) {
-	l.printData(level_info, data, fmt.Sprint(v...))
+	l.printData(LogLevelInfo, data, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Debugd(data JLData, v ...interface{}) {
-	l.printData(level_debug, data, fmt.Sprint(v...))
+	l.printData(LogLevelDebug, data, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Warningd(data JLData, v ...interface{}) {
-	l.printData(level_warning, data, fmt.Sprint(v...))
+	l.printData(LogLevelWarning, data, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Errord(data JLData, v ...interface{}) {
-	l.printData(level_error, data, fmt.Sprint(v...))
+	l.printData(LogLevelError, data, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Fatald(data JLData, v ...interface{}) {
-	l.printData(level_fatal, data, fmt.Sprint(v...))
+	l.printData(LogLevelFatal, data, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Panicd(data JLData, v ...interface{}) {
-	l.printData(level_panic, data, fmt.Sprint(v...))	
+	l.printData(LogLevelPanic, data, fmt.Sprint(v...))	
 }
 
 func (l *JLogger) Info(v ...interface{}) {
-	l.print(level_info, fmt.Sprint(v...))
+	l.print(LogLevelInfo, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Debug(v ...interface{}) {
-	l.print(level_debug, fmt.Sprint(v...))
+	l.print(LogLevelDebug, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Warning(v ...interface{}) {
-	l.print(level_warning, fmt.Sprint(v...))
+	l.print(LogLevelWarning, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Error(v ...interface{}) {
-	l.print(level_error, fmt.Sprint(v...))
+	l.print(LogLevelError, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Fatal(v ...interface{}) {
-	l.print(level_fatal, fmt.Sprint(v...))
+	l.print(LogLevelFatal, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Panic(v ...interface{}) {
-	l.print(level_panic, fmt.Sprint(v...))
+	l.print(LogLevelPanic, fmt.Sprint(v...))
 }
 
 func (l *JLogger) printData(level uint, data JLData, msg string) {
-	if level >= l.minlevel {
+	if level >= l.minLevel {
 		if l.ansiMode {
 			color := levelToColor(level)
 			out := fmt.Sprintf("\x1b[%dm[%s]\x1b[0m %s\n     \x1b[%[1]dm→ ", color, levelToString(level), msg)
@@ -196,25 +204,25 @@ func (l *JLogger) printData(level uint, data JLData, msg string) {
 			l.log.Output(2, out)
 		}
 
-		if level == level_fatal {
+		if level == LogLevelFatal {
 			os.Exit(1)
-		} else if level == level_panic {
+		} else if level == LogLevelPanic {
 			panic(msg)
 		}
 	}
 }
 
 func (l *JLogger) print(level uint, msg string) {
-	if level >= l.minlevel {
+	if level >= l.minLevel {
 		if l.ansiMode {
 			l.log.Output(2, fmt.Sprintf("\x1b[%dm[%s]\x1b[0m %s", levelToColor(level), levelToString(level), msg))
 		} else {
 			l.log.Output(2, fmt.Sprintf("[%s] %s", levelToString(level), msg))
 		}
 
-		if level == level_fatal {
+		if level == LogLevelFatal {
 			os.Exit(1)
-		} else if level == level_panic {
+		} else if level == LogLevelPanic {
 			panic(msg)
 		}
 	}
