@@ -1,54 +1,54 @@
 package jantar
 
 import (
-  "reflect"
-  "net/http"
+	"net/http"
+	"reflect"
 )
 
 // IController describes a Controller
 type IController interface {
-  setInternal(rw http.ResponseWriter, r *http.Request, name string, action string)
-  Render()
+	setInternal(rw http.ResponseWriter, r *http.Request, name string, action string)
+	Render()
 }
 
 // Controller implements core functionalities of the IController interface
 type Controller struct {
-  name       string
-  action     string
-  Respw       http.ResponseWriter
-  Req         *http.Request
-  RenderArgs  map[string]interface{}
+	name       string
+	action     string
+	Respw      http.ResponseWriter
+	Req        *http.Request
+	RenderArgs map[string]interface{}
 }
 
 func newController(t reflect.Type, respw http.ResponseWriter, req *http.Request, name string, action string) IController {
-  c := reflect.New(t).Interface().(IController)
-  c.setInternal(respw, req, name, action)
+	c := reflect.New(t).Interface().(IController)
+	c.setInternal(respw, req, name, action)
 
-  return c
+	return c
 }
 
 func getControllerType(handler interface{}) reflect.Type {
-  t := reflect.TypeOf(handler)
-  if t.Kind() == reflect.Func && t.NumIn() != 0 && t.In(0).Implements(reflect.TypeOf((*IController)(nil)).Elem()) {
-    return t.In(0).Elem()
-  }
+	t := reflect.TypeOf(handler)
+	if t.Kind() == reflect.Func && t.NumIn() != 0 && t.In(0).Implements(reflect.TypeOf((*IController)(nil)).Elem()) {
+		return t.In(0).Elem()
+	}
 
-  return nil
+	return nil
 }
 
 func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, name string, action string) {
-  c.name = name
-  c.action = action
-  c.Respw = respw
-  c.Req = req
-  c.RenderArgs = make(map[string]interface{})
+	c.name = name
+	c.action = action
+	c.Respw = respw
+	c.Req = req
+	c.RenderArgs = make(map[string]interface{})
 }
 
 // Render gets the template for the calling action and renders it
 func (c *Controller) Render() {
-  tm := GetModule(MODULE_TEMPLATE_MANAGER).(*TemplateManager)
+	tm := GetModule(MODULE_TEMPLATE_MANAGER).(*TemplateManager)
 
-  if err := tm.RenderTemplate(c.Respw, c.Req, c.name + "/" + c.action + ".html", c.RenderArgs); err != nil {
-    Log.Warning(err.Error())
-  }
+	if err := tm.RenderTemplate(c.Respw, c.Req, c.name+"/"+c.action+".html", c.RenderArgs); err != nil {
+		Log.Warning(err.Error())
+	}
 }

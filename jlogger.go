@@ -1,32 +1,32 @@
 package jantar
 
 import (
-	"io"
-	"os"
 	"fmt"
+	"io"
 	"log"
+	"os"
 )
 
 const (
-	LogLevelDebug 		= iota
-	LogLevelInfo 		= iota
-	LogLevelWarning 	= iota
-	LogLevelError   	= iota
-	LogLevelFatal 		= iota
-	LogLevelPanic		= iota
+	LogLevelDebug   = iota
+	LogLevelInfo    = iota
+	LogLevelWarning = iota
+	LogLevelError   = iota
+	LogLevelFatal   = iota
+	LogLevelPanic   = iota
 
 	nocolor = 0
-	red 		= 31
-	green 	= 32
-	yellow 	= 33
-	blue 		= 34
+	red     = 31
+	green   = 32
+	yellow  = 33
+	blue    = 34
 )
 
 // JLogger is a simple Log with some handy functions. Largely inspired by https://github.com/Sirupsen/logrus
 type JLogger struct {
-	log 			*log.Logger
-	minLevel 	uint
-	ansiMode	bool
+	log      *log.Logger
+	minLevel uint
+	ansiMode bool
 }
 
 // JLData is a type describing map that can be passed to Data<Level>f functions for debug output
@@ -108,7 +108,7 @@ func (l *JLogger) Fataldf(data JLData, format string, v ...interface{}) {
 }
 
 func (l *JLogger) Panicdf(data JLData, format string, v ...interface{}) {
-	l.printData(LogLevelPanic, data, fmt.Sprintf(format, v...))	
+	l.printData(LogLevelPanic, data, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Infof(format string, v ...interface{}) {
@@ -156,7 +156,7 @@ func (l *JLogger) Fatald(data JLData, v ...interface{}) {
 }
 
 func (l *JLogger) Panicd(data JLData, v ...interface{}) {
-	l.printData(LogLevelPanic, data, fmt.Sprint(v...))	
+	l.printData(LogLevelPanic, data, fmt.Sprint(v...))
 }
 
 func (l *JLogger) Info(v ...interface{}) {
@@ -196,7 +196,7 @@ func (l *JLogger) printData(level uint, data JLData, msg string) {
 			l.log.Output(2, out)
 		} else {
 			out := fmt.Sprintf("[%s] %s\n     → ", levelToString(level), msg)
-			
+
 			for key, val := range data {
 				out += fmt.Sprintf("%v=%v ", key, val)
 			}
