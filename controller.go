@@ -1,7 +1,6 @@
 package jantar
 
 import (
-  "github.com/tsurai/jantar/context"
   "reflect"
   "net/http"
 )
@@ -47,7 +46,7 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 
 // Render gets the template for the calling action and renders it
 func (c *Controller) Render() {
-  tm := context.GetGlobal("TemplateManager").(*TemplateManager)
+  tm := GetModule(MODULE_TEMPLATE_MANAGER).(*TemplateManager)
 
   if err := tm.RenderTemplate(c.Respw, c.Req, c.name + "/" + c.action + ".html", c.RenderArgs); err != nil {
     Log.Warning(err.Error())

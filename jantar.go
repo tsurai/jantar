@@ -83,7 +83,9 @@ func New(config *Config) *Jantar {
 
   // load ssl certificate
   if config.Tls != nil {
-    j.loadCertificate()
+    if err := loadTlsCertificate(config.Tls); err != nil {
+      Log.Fatald(JLData{"error": err}, "Failed to load x509 certificate")
+    }
   }
   
   setModule(MODULE_TEMPLATE_MANAGER, j.tm)
@@ -92,26 +94,6 @@ func New(config *Config) *Jantar {
   j.AddRoute("GET", "/public/.+", servePublic)
 
   return j
-}
-
-func (j *Jantar) loadCertificate() {
-  var err error
-  var cert tls.Certificate
-  conf := j.config.Tls
-
-  if conf.CertFile != "" && conf.KeyFile != "" {
-    cert, err = tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
-  } else if conf.CertPem != nil && conf.KeyPem != nil {
-    cert, err = tls.X509KeyPair(conf.CertPem, conf.KeyPem)
-  } else {
-    Log.Fatal("Failed to load X509 certificate: missing parameter")
-  }
-
-  if err != nil {
-    Log.Fatald(JLData{"error": err}, "Failed to load X509 certificate", err)
-  }
-
-  j.config.Tls.cert = cert
 }
 
 // AddMiddleware adds a given middleware to the current middleware list. Middlewares are executed
@@ -188,35 +170,18 @@ func (j *Jantar) listenForSignals() {
 }
 
 func (j *Jantar) listenAndServe(addr string, handler http.Handler) error {
+  var err error
+
   if addr == "" {
     addr = ":http"
   }
 
-  server := &http.Server{Addr: addr, Handler: handler}
   
-  var err error
 
   if j.config.Tls != nil {
     // configure tls with secure settings
-    j.listener, err = tls.Listen("tcp", addr, &tls.Config{
-      Certificates: []tls.Certificate{j.config.Tls.cert},
-      CipherSuites: []uint16{
-        TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-        TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-        tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-        tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-        tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-        tls.TLS_RSA_WITH_AES_128_CBC_SHA,
-        tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-        tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-        tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-        tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-        tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
-        tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
-      },
-      PreferServerCipherSuites: true,
-      MinVersion: tls.VersionTLS10,
-    })
+    tlsConfig.Certificates = []tls.Certificate{j.config.Tls.cert}
+    j.listener, err = tls.Listen("tcp", addr, tlsConfig)
 
     // listen redirect port 80 to 443 if using the standard port
     if j.config.Port == 443 {
@@ -225,14 +190,15 @@ func (j *Jantar) listenAndServe(addr string, handler http.Handler) error {
           http.Redirect(respw, req, "https://" + j.config.Hostname + req.RequestURI, 301)
         }))
     }
-   } else {
-   j.listener, err = net.Listen("tcp", addr) 
+  } else {
+    j.listener, err = net.Listen("tcp", addr) 
   }
 
   if err != nil {
     return err
   }
 
+  server := &http.Server{Addr: addr, Handler: handler}
   if err = server.Serve(j.listener); !j.closing {
     return err
   } 
@@ -296,7 +262,7 @@ func (j *Jantar) Run() {
 
   go j.listenForSignals()
 
-  Log.Infod(JLData{"Hostname": j.config.Hostname, "Port": j.config.Port, "TLS": j.config.Tls != nil}, "Starting server & listening")
+  Log.Infod(JLData{"hostname": j.config.Hostname, "port": j.config.Port, "TLS": j.config.Tls != nil}, "Starting server & listening")
   
   if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
     Log.Info(err)
