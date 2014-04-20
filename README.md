@@ -47,14 +47,14 @@ import (
 )
 
 func main() {
-  j := jantar.New(&jantar.Config {
-    Hostname: "localhost",
-    Port:     3000,
-  })
+	j := jantar.New(&jantar.Config {
+		Hostname: "localhost",
+		Port:     3000,
+	})
 
-  j.AddRoute("GET", "/", func(respw http.ResponseWriter, req *http.Request) {
-    respw.Write([]byte("Hello World"))
-  })
+	j.AddRoute("GET", "/", func(respw http.ResponseWriter, req *http.Request) {
+		respw.Write([]byte("Hello World"))
+	})
 
 	j.Run()
 }
@@ -81,7 +81,7 @@ import (
 )
 
 type App struct {
-  jantar.Controller
+	jantar.Controller
 }
 
 func (c *App) Index() {
@@ -105,9 +105,9 @@ import (
 
 func main() {
 	j := jantar.New(&jantar.Config {
-    Hostname: "localhost",
-    Port:     3000,
-  })
+		Hostname: "localhost",
+		Port:     3000,
+	})
 
 	j.AddRoute("GET", "/", jantar.CallController((*c.App).Index))
 
