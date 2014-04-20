@@ -16,6 +16,8 @@ Jantar is a lightweight mvc web framework with emphasis on security written in g
 * Encrypted and signed cookies using AES256 and HMAC(SHA256)
 * Simple Middleware interface
 * Compatible with http.HandlerFunc
+* Responsive to current events
+	* ![Preview](https://i.imgur.com/OKGR3WG.png)
 
 ## Table of Contents
 * [Current State](#current-state)
@@ -36,7 +38,7 @@ go get github.com/tsurai/jantar
 ```
 
 Now you can import jantar and create a simple website
-```
+```go
 package main
 
 import (
@@ -69,9 +71,9 @@ Using Controller and rendering Templates is very easy with Jantar. For this simp
 |--- index.html
 | main.go
 ```
-
+--
 *controllers/app.go*
-```
+```go
 package controller
 
 import (
@@ -86,14 +88,14 @@ func (c *App) Index() {
 	c.Render()
 }
 ```
-
+--
 *views/app/index.html*
-```
+```html
 <h1>Hello Controller</h1>
 ```
-  
+--
 *main.go*
-```
+```go
 package main
 
 import (
