@@ -1,4 +1,4 @@
-// Jantar is a lightweight mvc web framework with emphasis on security written in golang.
+// Package jantar is a lightweight mvc web framework with emphasis on security written in golang.
 //
 // It has been largely inspired by Martini(https://github.com/codegangsta/martini) but prefers performance over
 // syntactic sugar and aims to provide crucial security settings and features right out of the box.
@@ -22,11 +22,6 @@ var (
 	Log *JLogger
 )
 
-const (
-	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 uint16 = 0xc02c
-	TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384   uint16 = 0xc030
-)
-
 // Jantar is the top level application type
 type Jantar struct {
 	closing    bool
@@ -38,6 +33,7 @@ type Jantar struct {
 	router     *router
 }
 
+// TlsConfig can be given to Jantar to enable tls support
 type TlsConfig struct {
 	CertFile string
 	KeyFile  string
@@ -46,6 +42,7 @@ type TlsConfig struct {
 	cert     tls.Certificate
 }
 
+// Config is the main configuration struct for jantar
 type Config struct {
 	Hostname string
 	Port     int
@@ -214,7 +211,7 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 		req.Method = method
 	}
 
-	Log.Infof("%s %s", req.Method, req.RequestURI)
+	Log.Infof("%s %s", req.Method, req.URL.Path)
 
 	// set security header
 	respw.Header().Set("Strict-Transport-Security", "max-age=31536000;includeSubDomains")
@@ -222,7 +219,9 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 	respw.Header().Set("X-XSS-Protection", "1;mode=block")
 	respw.Header().Set("X-Content-Type-Options", "nosniff")
 
-	if route := j.router.searchRoute(req); route != nil {
+	if strings.HasPrefix(req.URL.Path, "/public/") {
+		servePublic(respw, req)
+	} else if route := j.router.searchRoute(req); route != nil {
 		if j.callMiddleware(respw, req) {
 			route.handler(respw, req)
 		}
@@ -263,7 +262,7 @@ func (j *Jantar) Run() {
 	Log.Infod(JLData{"hostname": j.config.Hostname, "port": j.config.Port, "TLS": j.config.Tls != nil}, "Starting server & listening")
 
 	if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
-		Log.Info(err)
+		Log.Fatal(err)
 	}
 
 	Log.Info("Stopping server")

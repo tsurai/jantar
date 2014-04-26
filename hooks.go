@@ -7,6 +7,7 @@ import (
 
 // TODO: add hook fire function
 
+// Hook error codes
 var (
 	ErrHookDuplicateID    = errors.New("id already in use")
 	ErrHookUnknownID      = errors.New("unknown hook Id")

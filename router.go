@@ -16,22 +16,131 @@ type route struct {
 	pattern string
 	method  string
 	handler http.HandlerFunc
-	regex   *regexp.Regexp
+}
+
+type rootNode struct {
+	get 		*pathNode
+	post 		*pathNode
+	delete 	*pathNode
+	put 		*pathNode
+}
+
+type pathLeaf struct {
+	paramNames []string
+	route 		 *route
+}
+
+type pathNode struct {
+	edges 		map[string]*pathNode
+	wildcard 	*pathNode
+	leaf 			*pathLeaf
 }
 
 type router struct {
 	namedRoutes map[string]*route
-	routes      []*route
+	pathRoot		rootNode
 }
 
 // Router functions ----------------------------------------------
 func newRouter() *router {
-	return &router{namedRoutes: make(map[string]*route)}
+	return &router{namedRoutes: make(map[string]*route), pathRoot: rootNode{newPathNode(), newPathNode(), newPathNode(), newPathNode()}}
 }
 
-func (r *router) addRoute(method string, pattern string, handler interface{}) *route {
-	route := newRoute(strings.ToUpper(method), pattern, handler)
-	r.routes = append(r.routes, route)
+func newPathNode() *pathNode {
+	return &pathNode{edges: make(map[string]*pathNode)}
+}
+
+func splitPath(key string) []string {
+	elements := strings.Split(key, "/")
+
+	if elements[0] == "" {
+		elements = elements[1:]
+	}
+	if elements[len(elements)-1] == "" {
+		elements = elements[:len(elements)-1]
+	}
+	return elements
+}
+
+func (r *router) getMethodPathNode(method string) *pathNode {
+	var node *pathNode
+	
+	switch strings.ToUpper(method) {
+	case "GET":
+		node = r.pathRoot.get
+	case "POST":
+		node = r.pathRoot.post
+	case "PUT":
+		node = r.pathRoot.put
+	case "DELETE":
+		node = r.pathRoot.delete
+	default:
+		node = r.pathRoot.get
+	}
+
+	return node
+}
+
+func (r *router) findPathLeaf(method string, path string) (*pathLeaf, map[string]string) {
+	var variables []string
+	node := r.getMethodPathNode(method)
+
+	for _, segment := range splitPath(path) {
+		if edge, ok := node.edges[segment]; ok {
+			node = edge
+		} else {
+			if node.wildcard == nil {
+				return nil, nil
+			}
+			variables = append(variables, segment)
+			node = node.wildcard
+		}		
+	}
+
+	if node.leaf == nil {
+		return nil, nil
+	}
+
+	param := make(map[string]string)
+	for i, v := range variables {
+		param[node.leaf.paramNames[i]] = v
+	}
+	
+	return node.leaf, param
+}
+
+func (r *router) insertPathLeaf(method string, path string) *pathLeaf {
+	var paramNames []string
+	node := r.getMethodPathNode(method)
+	
+	for _, segment := range splitPath(path) {
+		if strings.HasPrefix(segment, ":") {
+			if node.wildcard == nil {
+				node.wildcard = newPathNode()
+			}
+
+			paramNames = append(paramNames, segment[1:])
+			node = node.wildcard
+			continue
+		}
+
+		if edge, ok := node.edges[segment]; ok {
+			node = edge
+		} else {
+			node.edges[segment] = newPathNode()
+			node = node.edges[segment]
+		}
+	}
+
+	node.leaf = &pathLeaf{paramNames, nil}
+	return node.leaf
+}
+
+func (r *router) addRoute(method string, path string, handler interface{}) *route {
+	route := newRoute(strings.ToUpper(method), path, handler)
+
+	node := r.insertPathLeaf(method, path)
+	node.route = route
 
 	// is route a controller route
 	if route.cName != "" {
@@ -43,25 +152,14 @@ func (r *router) addRoute(method string, pattern string, handler interface{}) *r
 }
 
 func (r *router) searchRoute(req *http.Request) *route {
-	method := strings.ToUpper(req.Method)
-	request := req.RequestURI
-
-	for i, route := range r.routes {
-		if route.method == method || method == "ANY" {
-			matches := route.regex.FindStringSubmatch(request)
-
-			if len(matches) > 0 && matches[0] == request {
-				params := make(map[string]string)
-
-				for n := 1; n < len(matches)-1; n++ {
-					params[route.regex.SubexpNames()[n]] = matches[i]
-				}
-
-				context.Set(req, "UrlParam", params, false)
-				return r.routes[i]
-			}
+	if node, params := r.findPathLeaf(req.Method, req.URL.Path); node != nil {
+		if len(params) != 0 {
+			context.Set(req, "UrlParam", params, true)
 		}
+
+		return node.route
 	}
+	
 	return nil
 }
 
@@ -71,7 +169,7 @@ func (r *router) getReverseUrl(name string, param []interface{}) string {
 
 	if route != nil {
 		i := -1
-		regex := regexp.MustCompile("{[^/{}]+}")
+		regex := regexp.MustCompile(":[^/]+")
 		url := regex.ReplaceAllStringFunc(route.pattern, func(str string) string {
 			i = i + 1
 			if i < nParam {
@@ -127,13 +225,7 @@ func newRoute(method string, pattern string, handler interface{}) *route {
 		}
 	}
 
-	regex := regexp.MustCompile("{[a-zA-Z0-9]+}")
-	regexPattern := regex.ReplaceAllStringFunc(pattern, func(s string) string {
-		return fmt.Sprintf("(?P<%s>[^/]+)", s[1:len(s)-1])
-	})
-	regexPattern = regexPattern + "/?(\\?.*)?"
-
-	return &route{cName, cAction, pattern, method, finalFunc, regexp.MustCompile(regexPattern)}
+	return &route{cName, cAction, pattern, method, finalFunc}
 }
 
 func (r *route) Name(name string) {

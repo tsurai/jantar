@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+// Additional TLS cipher
+const (
+	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 uint16 = 0xc02c
+	TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384   uint16 = 0xc030
+)
+
 var tlsConfig = &tls.Config{
 	CipherSuites: []uint16{
 		TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,

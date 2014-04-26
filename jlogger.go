@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// Defines the various logging level
 const (
 	LogLevelDebug   = iota
 	LogLevelInfo    = iota
@@ -14,7 +15,9 @@ const (
 	LogLevelError   = iota
 	LogLevelFatal   = iota
 	LogLevelPanic   = iota
+)
 
+const (
 	nocolor = 0
 	red     = 31
 	green   = 32
@@ -70,6 +73,7 @@ func levelToString(level uint) string {
 	}
 }
 
+// NewJLogger creates a new JLogger instance
 func NewJLogger(out io.Writer, prefix string, minLevel uint) *JLogger {
 	ansiMode := false
 	if isTerminal(os.Stderr.Fd()) {
@@ -79,6 +83,7 @@ func NewJLogger(out io.Writer, prefix string, minLevel uint) *JLogger {
 	return &JLogger{log.New(out, prefix, 0), minLevel, ansiMode}
 }
 
+// SetMinLevel changes the loggers current minimal logging level
 func (l *JLogger) SetMinLevel(minLevel uint) {
 	if minLevel < LogLevelInfo || minLevel > LogLevelPanic {
 		l.minLevel = LogLevelInfo
@@ -91,46 +96,58 @@ func (l *JLogger) Infodf(data JLData, format string, v ...interface{}) {
 	l.printData(LogLevelInfo, data, fmt.Sprintf(format, v...))
 }
 
+// Debugdf is equivalent to Infodf but uses a different logging level
 func (l *JLogger) Debugdf(data JLData, format string, v ...interface{}) {
 	l.printData(LogLevelDebug, data, fmt.Sprintf(format, v...))
 }
 
+// Warningdf is equivalent to Infodf but uses a different logging level
 func (l *JLogger) Warningdf(data JLData, format string, v ...interface{}) {
 	l.printData(LogLevelWarning, data, fmt.Sprintf(format, v...))
 }
 
+// Errordf is equivalent to Infodf but uses a different logging level
 func (l *JLogger) Errordf(data JLData, format string, v ...interface{}) {
 	l.printData(LogLevelError, data, fmt.Sprintf(format, v...))
 }
 
+// Fataldf is equivalent to Infodf but uses a different logging level and calls fatal afterwards
 func (l *JLogger) Fataldf(data JLData, format string, v ...interface{}) {
 	l.printData(LogLevelFatal, data, fmt.Sprintf(format, v...))
 }
 
+// Panicdf is equivalent to Infodf but uses a different logging level and calls fatal afterwards
 func (l *JLogger) Panicdf(data JLData, format string, v ...interface{}) {
 	l.printData(LogLevelPanic, data, fmt.Sprintf(format, v...))
 }
 
 func (l *JLogger) Infof(format string, v ...interface{}) {
-	l.print(LogLevelInfo, fmt.Sprintf(format, v...))
+	if LogLevelInfo >= l.minLevel {
+		l.print(LogLevelInfo, fmt.Sprintf(format, v...))
+	}
 }
 
+// Debugf is equivalent to Infof but uses a different logging level
 func (l *JLogger) Debugf(format string, v ...interface{}) {
 	l.print(LogLevelDebug, fmt.Sprintf(format, v...))
 }
 
+// Warningf is equivalent to Infof but uses a different logging level
 func (l *JLogger) Warningf(format string, v ...interface{}) {
 	l.print(LogLevelWarning, fmt.Sprintf(format, v...))
 }
 
+// Errorf is equivalent to Infof but uses a different logging level
 func (l *JLogger) Errorf(format string, v ...interface{}) {
 	l.print(LogLevelFatal, fmt.Sprintf(format, v...))
 }
 
+// Fatalf is equivalent to Infof but uses a different logging level and calls fatal afterwards
 func (l *JLogger) Fatalf(format string, v ...interface{}) {
 	l.print(LogLevelFatal, fmt.Sprintf(format, v...))
 }
 
+// Panicf is equivalent to Infof but uses a different logging level and calls panic afterwards
 func (l *JLogger) Panicf(format string, v ...interface{}) {
 	l.print(LogLevelPanic, fmt.Sprintf(format, v...))
 }
@@ -139,22 +156,27 @@ func (l *JLogger) Infod(data JLData, v ...interface{}) {
 	l.printData(LogLevelInfo, data, fmt.Sprint(v...))
 }
 
+// Debugd is equivalent to Infod but uses a different logging level
 func (l *JLogger) Debugd(data JLData, v ...interface{}) {
 	l.printData(LogLevelDebug, data, fmt.Sprint(v...))
 }
 
+// Warningd is equivalent to Infod but uses a different logging level
 func (l *JLogger) Warningd(data JLData, v ...interface{}) {
 	l.printData(LogLevelWarning, data, fmt.Sprint(v...))
 }
 
+// Errord is equivalent to Infod but uses a different logging level 
 func (l *JLogger) Errord(data JLData, v ...interface{}) {
 	l.printData(LogLevelError, data, fmt.Sprint(v...))
 }
 
+// Fatald is equivalent to Infod but uses a different logging level and calls fatal afterwards
 func (l *JLogger) Fatald(data JLData, v ...interface{}) {
 	l.printData(LogLevelFatal, data, fmt.Sprint(v...))
 }
 
+// Panicd is equivalent to Infod but uses a different logging level and calls panic afterwards
 func (l *JLogger) Panicd(data JLData, v ...interface{}) {
 	l.printData(LogLevelPanic, data, fmt.Sprint(v...))
 }
@@ -163,22 +185,27 @@ func (l *JLogger) Info(v ...interface{}) {
 	l.print(LogLevelInfo, fmt.Sprint(v...))
 }
 
+// Debug is equivalent to Info but uses a different logging level
 func (l *JLogger) Debug(v ...interface{}) {
 	l.print(LogLevelDebug, fmt.Sprint(v...))
 }
 
+// Warning is equivalent to Info but uses a different logging level
 func (l *JLogger) Warning(v ...interface{}) {
 	l.print(LogLevelWarning, fmt.Sprint(v...))
 }
 
+// Error is equivalent to Info but uses a different logging level
 func (l *JLogger) Error(v ...interface{}) {
 	l.print(LogLevelError, fmt.Sprint(v...))
 }
 
+// Fatal is equivalent to Info but uses a different logging level and calls fatal afterwards
 func (l *JLogger) Fatal(v ...interface{}) {
 	l.print(LogLevelFatal, fmt.Sprint(v...))
 }
 
+// Panic is equivalent to Info but uses a different logging level and calls panic afterwards
 func (l *JLogger) Panic(v ...interface{}) {
 	l.print(LogLevelPanic, fmt.Sprint(v...))
 }

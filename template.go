@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// TemplateManager hooks
 const (
 	TmBeforeParse  = iota
 	TmBeforeRender = iota
@@ -164,14 +165,14 @@ func (tm *TemplateManager) loadTemplates() error {
 
 	// create a new watcher and start the watcher thread
 	if tm.watcher, err = fsnotify.NewWatcher(); err != nil {
-		return fmt.Errorf("Can't create new fswatcher. Reason: %s", err.Error())
+		return fmt.Errorf("can't create new fswatcher. Reason: %s", err.Error())
 	}
 	go tm.watch()
 
 	// walk resursive through the template directory
 	res := filepath.Walk(tm.directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return fmt.Errorf("Can't walk directory '%s'. Reason: %s", path, err.Error())
+			return fmt.Errorf("can't walk directory '%s'. Reason: %s", path, err.Error())
 		}
 
 		if info.IsDir() {
@@ -181,7 +182,7 @@ func (tm *TemplateManager) loadTemplates() error {
 
 			// add the current directory to the watcher
 			if err = tm.watcher.Watch(path); err != nil {
-				Log.Warningf("Can't watch directory '%s'. Reason: %s\n", path, err.Error())
+				Log.Warningf("can't watch directory '%s'. Reason: %s\n", path, err.Error())
 			}
 			return nil
 		}
@@ -189,7 +190,7 @@ func (tm *TemplateManager) loadTemplates() error {
 		if strings.HasSuffix(info.Name(), ".html") {
 			fdata, err := ioutil.ReadFile(path)
 			if err != nil {
-				return fmt.Errorf("Can't read template file '%s'. Reason: %s\n", info.Name(), err.Error())
+				return fmt.Errorf("can't read template file '%s'. Reason: %s\n", info.Name(), err.Error())
 			}
 
 			tmplName := strings.Replace(strings.ToLower(path[len(tm.directory)+1:]), "\\", "/", -1)
@@ -208,7 +209,7 @@ func (tm *TemplateManager) loadTemplates() error {
 			}
 
 			if err != nil {
-				return fmt.Errorf("Failed to parse template '%s'. Reason: %s", tmplName, err.Error())
+				return fmt.Errorf("failed to parse template '%s'. Reason: %s", tmplName, err.Error())
 			}
 		}
 		return nil
@@ -241,7 +242,7 @@ func (tm *TemplateManager) AddTmplFunc(name string, fn interface{}) {
 func (tm *TemplateManager) RenderTemplate(respw http.ResponseWriter, req *http.Request, name string, args map[string]interface{}) error {
 	tmpl := tm.tmplList.Lookup(strings.ToLower(name))
 	if tmpl == nil {
-		return fmt.Errorf("Can't find template '%s'", strings.ToLower(name))
+		return fmt.Errorf("can't find template '%s'", strings.ToLower(name))
 	}
 
 	// call BEFORE_RENDER hooks
@@ -251,7 +252,7 @@ func (tm *TemplateManager) RenderTemplate(respw http.ResponseWriter, req *http.R
 	}
 
 	if err := tmpl.Execute(respw, args); err != nil {
-		return fmt.Errorf("Failed to render template. Reason: %s", err.Error())
+		return fmt.Errorf("failed to render template. Reason: %s", err.Error())
 	}
 
 	return nil

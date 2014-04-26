@@ -1,4 +1,4 @@
-// Context is a small package for arbitrary per-request, global data and modules
+// Package context is a small package for arbitrary per-request, global data and modules
 //
 // Module data are set by jantar and are read-only by default.
 package context
@@ -67,6 +67,7 @@ func GetOk(req *http.Request, key interface{}) (interface{}, bool) {
   return d.value, ok
 }
 
+// ClearData deletes all data belonging to a given request
 func ClearData(req *http.Request) {
   delete(requestData, req)
 }
