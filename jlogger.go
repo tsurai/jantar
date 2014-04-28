@@ -92,6 +92,7 @@ func (l *JLogger) SetMinLevel(minLevel uint) {
 	}
 }
 
+// Infodf is equivalent to Infof but takes additional data to display
 func (l *JLogger) Infodf(data JLData, format string, v ...interface{}) {
 	l.printData(LogLevelInfo, data, fmt.Sprintf(format, v...))
 }
@@ -121,6 +122,7 @@ func (l *JLogger) Panicdf(data JLData, format string, v ...interface{}) {
 	l.printData(LogLevelPanic, data, fmt.Sprintf(format, v...))
 }
 
+// Infof is similar to log.Printf but uses a special markup indicating the message severity
 func (l *JLogger) Infof(format string, v ...interface{}) {
 	if LogLevelInfo >= l.minLevel {
 		l.print(LogLevelInfo, fmt.Sprintf(format, v...))
@@ -152,6 +154,7 @@ func (l *JLogger) Panicf(format string, v ...interface{}) {
 	l.print(LogLevelPanic, fmt.Sprintf(format, v...))
 }
 
+// Infod is equivalent to Info but takes additional data to display
 func (l *JLogger) Infod(data JLData, v ...interface{}) {
 	l.printData(LogLevelInfo, data, fmt.Sprint(v...))
 }
@@ -166,7 +169,7 @@ func (l *JLogger) Warningd(data JLData, v ...interface{}) {
 	l.printData(LogLevelWarning, data, fmt.Sprint(v...))
 }
 
-// Errord is equivalent to Infod but uses a different logging level 
+// Errord is equivalent to Infod but uses a different logging level
 func (l *JLogger) Errord(data JLData, v ...interface{}) {
 	l.printData(LogLevelError, data, fmt.Sprint(v...))
 }
@@ -181,6 +184,7 @@ func (l *JLogger) Panicd(data JLData, v ...interface{}) {
 	l.printData(LogLevelPanic, data, fmt.Sprint(v...))
 }
 
+// Info is similar to log.Print but uses a special markup indicating the message severity
 func (l *JLogger) Info(v ...interface{}) {
 	l.print(LogLevelInfo, fmt.Sprint(v...))
 }

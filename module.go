@@ -1,8 +1,11 @@
 package jantar
 
+// Constants for accessing jantars core modules
 const (
-	MODULE_TEMPLATE_MANAGER = iota
-	MODULE_ROUTER           = iota
+	moduleFirst           = iota
+	ModuleTemplateManager = iota
+	ModuleRouter          = iota
+	moduleLast            = iota
 )
 
 var (
@@ -13,11 +16,11 @@ func setModule(key int, value interface{}) {
 	moduleData[key] = value
 }
 
+// GetModule returns the module specified by key. Returns nil for an invalid key
 func GetModule(key int) interface{} {
-	return moduleData[key]
-}
+	if key > moduleFirst && key < moduleLast {
+		return moduleData[key]
+	}
 
-func GetModuleOk(key int) (interface{}, bool) {
-	data, ok := moduleData[key]
-	return data, ok
+	return nil
 }

@@ -21,15 +21,15 @@ type smallRect struct {
 }
 
 type consoleScreenBufferInfo struct {
-	size 								coord
-	cursorPosition     	coord
-	attributes         	uint16
-	window              smallRect
-	maximumWindowSize 	coord
+	size              coord
+	cursorPosition    coord
+	attributes        uint16
+	window            smallRect
+	maximumWindowSize coord
 }
 
 var (
-	kernel32 = syscall.NewLazyDLL("kernel32.dll")
+	kernel32                       = syscall.NewLazyDLL("kernel32.dll")
 	procGetConsoleScreenBufferInfo = kernel32.NewProc("GetConsoleScreenBufferInfo")
 )
 

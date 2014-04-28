@@ -46,7 +46,7 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 
 // Render gets the template for the calling action and renders it
 func (c *Controller) Render() {
-	tm := GetModule(MODULE_TEMPLATE_MANAGER).(*TemplateManager)
+	tm := GetModule(ModuleTemplateManager).(*TemplateManager)
 
 	if err := tm.RenderTemplate(c.Respw, c.Req, c.name+"/"+c.action+".html", c.RenderArgs); err != nil {
 		Log.Warning(err.Error())

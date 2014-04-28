@@ -37,7 +37,7 @@ func (c *csrf) Initialize() {
 	generateSecretKey()
 
 	// add all hooks to TemplateManger
-	tm := GetModule(MODULE_TEMPLATE_MANAGER).(*TemplateManager)
+	tm := GetModule(ModuleTemplateManager).(*TemplateManager)
 	if tm == nil {
 		Log.Fatal("Failed to get template manager")
 	}

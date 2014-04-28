@@ -1,7 +1,6 @@
 package jantar
 
 import (
-	"fmt"
 	"github.com/tsurai/jantar/context"
 	"net/http"
 	"reflect"
@@ -19,26 +18,26 @@ type route struct {
 }
 
 type rootNode struct {
-	get 		*pathNode
-	post 		*pathNode
-	delete 	*pathNode
-	put 		*pathNode
+	get    *pathNode
+	post   *pathNode
+	delete *pathNode
+	put    *pathNode
 }
 
 type pathLeaf struct {
 	paramNames []string
-	route 		 *route
+	route      *route
 }
 
 type pathNode struct {
-	edges 		map[string]*pathNode
-	wildcard 	*pathNode
-	leaf 			*pathLeaf
+	edges    map[string]*pathNode
+	wildcard *pathNode
+	leaf     *pathLeaf
 }
 
 type router struct {
 	namedRoutes map[string]*route
-	pathRoot		rootNode
+	pathRoot    rootNode
 }
 
 // Router functions ----------------------------------------------
@@ -46,39 +45,19 @@ func newRouter() *router {
 	return &router{namedRoutes: make(map[string]*route), pathRoot: rootNode{newPathNode(), newPathNode(), newPathNode(), newPathNode()}}
 }
 
-func newPathNode() *pathNode {
-	return &pathNode{edges: make(map[string]*pathNode)}
-}
-
-func splitPath(key string) []string {
-	elements := strings.Split(key, "/")
-
-	if elements[0] == "" {
-		elements = elements[1:]
-	}
-	if elements[len(elements)-1] == "" {
-		elements = elements[:len(elements)-1]
-	}
-	return elements
-}
-
 func (r *router) getMethodPathNode(method string) *pathNode {
-	var node *pathNode
-	
 	switch strings.ToUpper(method) {
 	case "GET":
-		node = r.pathRoot.get
+		return r.pathRoot.get
 	case "POST":
-		node = r.pathRoot.post
+		return r.pathRoot.post
 	case "PUT":
-		node = r.pathRoot.put
+		return r.pathRoot.put
 	case "DELETE":
-		node = r.pathRoot.delete
+		return r.pathRoot.delete
 	default:
-		node = r.pathRoot.get
+		return r.pathRoot.get
 	}
-
-	return node
 }
 
 func (r *router) findPathLeaf(method string, path string) (*pathLeaf, map[string]string) {
@@ -94,7 +73,7 @@ func (r *router) findPathLeaf(method string, path string) (*pathLeaf, map[string
 			}
 			variables = append(variables, segment)
 			node = node.wildcard
-		}		
+		}
 	}
 
 	if node.leaf == nil {
@@ -105,14 +84,14 @@ func (r *router) findPathLeaf(method string, path string) (*pathLeaf, map[string
 	for i, v := range variables {
 		param[node.leaf.paramNames[i]] = v
 	}
-	
+
 	return node.leaf, param
 }
 
 func (r *router) insertPathLeaf(method string, path string) *pathLeaf {
 	var paramNames []string
 	node := r.getMethodPathNode(method)
-	
+
 	for _, segment := range splitPath(path) {
 		if strings.HasPrefix(segment, ":") {
 			if node.wildcard == nil {
@@ -159,11 +138,11 @@ func (r *router) searchRoute(req *http.Request) *route {
 
 		return node.route
 	}
-	
+
 	return nil
 }
 
-func (r *router) getReverseUrl(name string, param []interface{}) string {
+func (r *router) getReverseURL(name string, param []interface{}) string {
 	route := r.getNamedRoute(name)
 	nParam := len(param)
 
@@ -231,4 +210,18 @@ func newRoute(method string, pattern string, handler interface{}) *route {
 func (r *route) Name(name string) {
 	router := context.GetGlobal("Router").(*router)
 	router.namedRoutes[strings.ToLower(name)] = r
+}
+
+// Helper functions ---------------------------------------------
+func newPathNode() *pathNode {
+	return &pathNode{edges: make(map[string]*pathNode)}
+}
+
+func splitPath(path string) []string {
+	segments := strings.Split(path, "/")
+
+	if segments[0] == "" {
+		segments = segments[1:]
+	}
+	return segments
 }

@@ -59,8 +59,8 @@ func newTemplateManager(directory string) *TemplateManager {
 			return template.HTML(str)
 		},
 		"url": func(name string, args ...interface{}) string {
-			router := GetModule(MODULE_ROUTER).(*router)
-			return router.getReverseUrl(name, args)
+			router := GetModule(ModuleRouter).(*router)
+			return router.getReverseURL(name, args)
 		}, /*
 		   "flash": func(args map[string]interface{}, key string) string {
 		     return args["flash"].(map[string]string)[key]

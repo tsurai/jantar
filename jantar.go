@@ -85,8 +85,8 @@ func New(config *Config) *Jantar {
 		}
 	}
 
-	setModule(MODULE_TEMPLATE_MANAGER, j.tm)
-	setModule(MODULE_ROUTER, j.router)
+	setModule(ModuleTemplateManager, j.tm)
+	setModule(ModuleRouter, j.router)
 
 	j.AddRoute("GET", "/public/.+", servePublic)
 
