@@ -183,7 +183,7 @@ func newRoute(method string, pattern string, handler interface{}) *route {
 	} else if cType := getControllerType(handler); cType != nil {
 		fn := runtime.FuncForPC(reflect.ValueOf(handler).Pointer())
 		if fn == nil {
-			Log.Warning("Failed to add route. Can't fetch controller function")
+			Log.Warning("failed to add route. Can't fetch controller function")
 			return nil
 		}
 

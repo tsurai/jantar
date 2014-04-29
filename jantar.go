@@ -56,7 +56,7 @@ func New(config *Config) *Jantar {
 	Log = NewJLogger(os.Stdout, "", LogLevelInfo)
 
 	if config == nil {
-		Log.Fatal("No config given")
+		Log.Fatal("no config given")
 	}
 
 	j := &Jantar{
@@ -76,12 +76,12 @@ func New(config *Config) *Jantar {
 	}
 
 	// load default middleware
-	j.AddMiddleware(&csrf{})
+	//j.AddMiddleware(&csrf{})
 
 	// load ssl certificate
 	if config.Tls != nil {
 		if err := loadTlsCertificate(config.Tls); err != nil {
-			Log.Fatald(JLData{"error": err}, "Failed to load x509 certificate")
+			Log.Fatald(JLData{"error": err}, "failed to load x509 certificate")
 		}
 	}
 
@@ -231,7 +231,7 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 	}
 
 	context.ClearData(req)
-	Log.Infof("Completed in %v", time.Since(t0))
+	Log.Infof("completed in %v", time.Since(t0))
 
 	j.wg.Done()
 }
@@ -259,11 +259,11 @@ func (j *Jantar) Run() {
 
 	go j.listenForSignals()
 
-	Log.Infod(JLData{"hostname": j.config.Hostname, "port": j.config.Port, "TLS": j.config.Tls != nil}, "Starting server & listening")
+	Log.Infod(JLData{"hostname": j.config.Hostname, "port": j.config.Port, "TLS": j.config.Tls != nil}, "starting server & listening")
 
 	if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
 		Log.Fatal(err)
 	}
 
-	Log.Info("Stopping server")
+	Log.Info("stopping server")
 }

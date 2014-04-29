@@ -143,12 +143,12 @@ func (tm *TemplateManager) watch() {
 		select {
 		case ev := <-tm.watcher.Event:
 			if !ev.IsRename() && filepath.Ext(ev.Name) == ".html" {
-				Log.Debug("Reloading templates")
+				Log.Debug("reloading templates")
 				go tm.loadTemplates()
 				return
 			}
 		case err := <-tm.watcher.Error:
-			Log.Debugf("File Watcher: %s", err)
+			Log.Debugf("file watcher: %s", err)
 			return
 		}
 	}
@@ -172,7 +172,7 @@ func (tm *TemplateManager) loadTemplates() error {
 	// walk resursive through the template directory
 	res := filepath.Walk(tm.directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return fmt.Errorf("can't walk directory '%s'. Reason: %s", path, err.Error())
+			return fmt.Errorf("can't walk directory '%s'. %s", path, err.Error())
 		}
 
 		if info.IsDir() {
@@ -182,7 +182,7 @@ func (tm *TemplateManager) loadTemplates() error {
 
 			// add the current directory to the watcher
 			if err = tm.watcher.Watch(path); err != nil {
-				Log.Warningf("can't watch directory '%s'. Reason: %s\n", path, err.Error())
+				Log.Warningf("can't watch directory '%s'. %s\n", path, err.Error())
 			}
 			return nil
 		}
@@ -190,7 +190,7 @@ func (tm *TemplateManager) loadTemplates() error {
 		if strings.HasSuffix(info.Name(), ".html") {
 			fdata, err := ioutil.ReadFile(path)
 			if err != nil {
-				return fmt.Errorf("can't read template file '%s'. Reason: %s\n", info.Name(), err.Error())
+				return fmt.Errorf("can't read template file '%s'. %s\n", info.Name(), err.Error())
 			}
 
 			tmplName := strings.Replace(strings.ToLower(path[len(tm.directory)+1:]), "\\", "/", -1)
@@ -209,7 +209,7 @@ func (tm *TemplateManager) loadTemplates() error {
 			}
 
 			if err != nil {
-				return fmt.Errorf("failed to parse template '%s'. Reason: %s", tmplName, err.Error())
+				return fmt.Errorf("failed to parse template '%s'. %s", tmplName, err.Error())
 			}
 		}
 		return nil

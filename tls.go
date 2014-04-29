@@ -78,6 +78,6 @@ func loadTlsCertificate(config *TlsConfig) error {
 func checkTlsCertificate(cert *x509.Certificate) {
 	// is pre heartbleed
 	if cert.NotBefore.Before(time.Date(2014, time.April, 07, 12, 0, 0, 0, time.UTC)) {
-		Log.Warningd(JLData{"issued": cert.NotBefore.UTC().Format(time.RFC822), "fixed": "07 April 14"}, "x509 Certificate has been issued before Heartbleed(CVE-2014-0160) fix!\nYour secret key and other private information might have been leaked")
+		Log.Warningd(JLData{"issued": cert.NotBefore.UTC().Format(time.RFC822), "fixed": "07 April 14"}, "x509 certificate has been issued before heartbleed(CVE-2014-0160) fix!\nYour secret key and other private information might have been leaked")
 	}
 }

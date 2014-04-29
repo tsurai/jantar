@@ -39,7 +39,7 @@ func (c *csrf) Initialize() {
 	// add all hooks to TemplateManger
 	tm := GetModule(ModuleTemplateManager).(*TemplateManager)
 	if tm == nil {
-		Log.Fatal("Failed to get template manager")
+		Log.Fatal("failed to get template manager")
 	}
 
 	tm.AddTmplFunc("csrfToken", func() string { return "" })
@@ -64,7 +64,7 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
 		}
 	} else {
 		if n, err := rand.Read(uniqueID); n != 32 || err != nil {
-			Log.Fatal("Failed to generate secret key")
+			Log.Fatal("failed to generate secret key")
 		}
 
 		http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: "id=" + base64.StdEncoding.EncodeToString(uniqueID)})
@@ -93,7 +93,7 @@ func generateSecretKey() {
 	secretKey = make([]byte, secretLength)
 
 	if n, err := rand.Read(secretKey); n != secretLength || err != nil {
-		Log.Fatal("Failed to generate secret key")
+		Log.Fatal("failed to generate secret key")
 	}
 }
 
