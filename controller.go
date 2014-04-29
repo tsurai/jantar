@@ -50,5 +50,6 @@ func (c *Controller) Render() {
 
 	if err := tm.RenderTemplate(c.Respw, c.Req, c.name+"/"+c.action+".html", c.RenderArgs); err != nil {
 		Log.Warning(err.Error())
+		http.Error(c.Respw, "500 internal server error", 500)
 	}
 }

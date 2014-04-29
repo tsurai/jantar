@@ -240,7 +240,7 @@ func (tm *TemplateManager) AddTmplFunc(name string, fn interface{}) {
 // RenderTemplate renders a template with the given name and arguments.
 // Note: A Controller should call its Render function instead.
 func (tm *TemplateManager) RenderTemplate(respw http.ResponseWriter, req *http.Request, name string, args map[string]interface{}) error {
-	tmpl := tm.tmplList.Lookup(strings.ToLower(name))
+	tmpl := tm.getTemplate(name)
 	if tmpl == nil {
 		return fmt.Errorf("can't find template '%s'", strings.ToLower(name))
 	}
