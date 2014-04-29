@@ -5,7 +5,7 @@ Jantar is a lightweight mvc web framework with emphasis on security written in g
 ## Features
 * RESTful pattern with protection against cross-site request forgery
 * Secure default settings for TLS
-	* No RC4, DES or similarly insecure cipher
+	* No RC4, DES or similarl insecure cipher
 	* No SSL, requires at least TLS 1.0
 	* Prefered cipher: TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
 * Secure default HTTP header
@@ -109,7 +109,7 @@ func main() {
 		Port:     3000,
 	})
 
-	j.AddRoute("GET", "/", jantar.CallController((*c.App).Index))
+	j.AddRoute("GET", "/", (*c.App).Index)
 
 	j.Run()
 }
@@ -124,9 +124,10 @@ Some might wonder why Jantar is using /dev/urandom instead of the seemingly more
 Please take some minutes and read this interesting article about [/dev/urandom/](http://www.2uo.de/myths-about-urandom/)
 
 ## Todo List
-- ~~proper error handling~~
-- ~~models & db interfaces~~
-- ~~middleware~~
-- ~~convert post data to struct~~
-- flexible configurations
-
+* more consistency in error handling
+* flexible config
+	* custom public directory
+	* custom http response handler
+* completion of controller struct
+* reintroduction of models
+* more hooks and a better middleware interface
