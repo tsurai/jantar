@@ -76,7 +76,7 @@ func New(config *Config) *Jantar {
 	}
 
 	// load default middleware
-	//j.AddMiddleware(&csrf{})
+	j.AddMiddleware(&csrf{})
 
 	// load ssl certificate
 	if config.Tls != nil {
@@ -254,7 +254,7 @@ func (j *Jantar) Run() {
 	j.initMiddleware()
 
 	if err := j.tm.loadTemplates(); err != nil {
-		Log.Error(err)
+		Log.Fataldf(JLData{"error": err}, "failed to load templates")
 	}
 
 	go j.listenForSignals()

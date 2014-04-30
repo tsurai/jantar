@@ -148,7 +148,7 @@ func (tm *TemplateManager) watch() {
 				return
 			}
 		case err := <-tm.watcher.Error:
-			Log.Debugf("file watcher: %s", err)
+			Log.Warningdf(JLData{"error": err}, "file watcher error")
 			return
 		}
 	}
@@ -165,14 +165,14 @@ func (tm *TemplateManager) loadTemplates() error {
 
 	// create a new watcher and start the watcher thread
 	if tm.watcher, err = fsnotify.NewWatcher(); err != nil {
-		return fmt.Errorf("can't create new fswatcher. Reason: %s", err.Error())
+		return err
 	}
 	go tm.watch()
 
 	// walk resursive through the template directory
 	res := filepath.Walk(tm.directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return fmt.Errorf("can't walk directory '%s'. %s", path, err.Error())
+			return err
 		}
 
 		if info.IsDir() {
@@ -182,7 +182,7 @@ func (tm *TemplateManager) loadTemplates() error {
 
 			// add the current directory to the watcher
 			if err = tm.watcher.Watch(path); err != nil {
-				Log.Warningf("can't watch directory '%s'. %s\n", path, err.Error())
+				Log.Warningdf(JLData{"error": err.Error()}, "can't watch directory '%s'", path)
 			}
 			return nil
 		}
@@ -190,7 +190,7 @@ func (tm *TemplateManager) loadTemplates() error {
 		if strings.HasSuffix(info.Name(), ".html") {
 			fdata, err := ioutil.ReadFile(path)
 			if err != nil {
-				return fmt.Errorf("can't read template file '%s'. %s\n", info.Name(), err.Error())
+				return err
 			}
 
 			tmplName := strings.Replace(strings.ToLower(path[len(tm.directory)+1:]), "\\", "/", -1)
@@ -209,7 +209,7 @@ func (tm *TemplateManager) loadTemplates() error {
 			}
 
 			if err != nil {
-				return fmt.Errorf("failed to parse template '%s'. %s", tmplName, err.Error())
+				return err
 			}
 		}
 		return nil
