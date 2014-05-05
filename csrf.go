@@ -1,26 +1,15 @@
 package jantar
 
 import (
-	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha512"
-	"encoding/base64"
+	"encoding/hex"
 	"github.com/tsurai/jantar/context"
 	"html/template"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
 // TODO: accept custom handler
-
-var (
-	secretKey []byte
-)
-
-const (
-	secretLength = 32
-)
 
 // csrf is a Middleware that protects against cross-side request forgery
 type csrf struct {
@@ -34,8 +23,6 @@ func noAccess(respw http.ResponseWriter, req *http.Request) {
 // Initialize prepares csrf for usage
 // Note: Do not call this yourself
 func (c *csrf) Initialize() {
-	generateSecretKey()
-
 	// add all hooks to TemplateManger
 	tm := GetModule(ModuleTemplateManager).(*TemplateManager)
 	if tm == nil {
@@ -56,28 +43,27 @@ func (c *csrf) Cleanup() {
 // Call executes the Middleware
 // Note: Do not call this yourself
 func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
-	uniqueID := make([]byte, 32)
+	var cookieToken []byte
 
 	if cookie, err := req.Cookie("JANTAR_ID"); err == nil {
-		if m, err := url.ParseQuery(cookie.Value); err == nil {
-			uniqueID, _ = base64.StdEncoding.DecodeString(m["id"][0])
-		}
+		cookieToken, _ = hex.DecodeString(cookie.Value)
 	} else {
-		if n, err := rand.Read(uniqueID); n != 32 || err != nil {
+		cookieToken = make([]byte, 32)
+		if n, err := rand.Read(cookieToken); n != 32 || err != nil {
 			Log.Fatal("failed to generate secret key")
 		}
 
-		http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: "id=" + base64.StdEncoding.EncodeToString(uniqueID)})
+		http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: hex.EncodeToString(cookieToken)})
 	}
 
-	context.Set(req, "_csrf", base64.StdEncoding.EncodeToString(generateToken(uniqueID)), true)
+	context.Set(req, "_csrf", cookieToken, true)
 
+	// check for safe methods
 	if req.Method == "GET" || req.Method == "HEAD" {
 		return true
 	}
 
-	token, _ := base64.StdEncoding.DecodeString(req.PostFormValue("_csrf-token"))
-	if hmac.Equal(token, generateToken(uniqueID)) {
+	if req.PostFormValue("_csrf-token") == string(cookieToken) {
 		return true
 	}
 
@@ -87,21 +73,6 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
 
 	/* log ip etc pp */
 	return false
-}
-
-func generateSecretKey() {
-	secretKey = make([]byte, secretLength)
-
-	if n, err := rand.Read(secretKey); n != secretLength || err != nil {
-		Log.Fatal("failed to generate secret key")
-	}
-}
-
-func generateToken(uniqueID []byte) []byte {
-	mac := hmac.New(sha512.New, secretKey)
-	mac.Write(uniqueID)
-
-	return mac.Sum(nil)
 }
 
 func beforeParseHook(tm *TemplateManager, name string, data *[]byte) {
