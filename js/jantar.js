@@ -28,8 +28,13 @@ function insert_csrf_token_into_forms(token) {
     var elements = document.getElementsByTagName("form");
 
     for(i = 0; i < elements.length; i++) {
+      var token_field = document.createElement("input");
+      token_field.type = "hidden";
+      token_field.name = "_csrf-token";
+      token_field.value = token;
+      
       elements[i].onsubmit = function(e) {
-        this.innerHTML += '<input type="hidden" name="_csrf-token" value="'+token+'">';
+        this.appendChild(token_field);
       }
     }
   }
