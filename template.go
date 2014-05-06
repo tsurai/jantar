@@ -32,7 +32,6 @@ type TemplateManager struct {
 
 func newTemplateManager(directory string) *TemplateManager {
 	funcs := template.FuncMap{
-		/* security functions */
 		"antiClickjacking": func() template.HTML {
 			return template.HTML("<style id=\"antiClickjack\">body{display:none !important;}</style>")
 		},
@@ -61,10 +60,13 @@ func newTemplateManager(directory string) *TemplateManager {
 		"url": func(name string, args ...interface{}) string {
 			router := GetModule(ModuleRouter).(*router)
 			return router.getReverseURL(name, args)
-		}, /*
-		   "flash": func(args map[string]interface{}, key string) string {
-		     return args["flash"].(map[string]string)[key]
-		   },*/
+		},
+		"flash": func(args map[string]interface{}, key string) string {
+			if flashMap, ok := args["flash"]; ok {
+				return flashMap.(map[string]string)[key]
+			}
+			return ""
+		},
 		"since": func(t time.Time) string {
 			seconds := int(time.Since(t).Seconds())
 			if seconds < 60 {

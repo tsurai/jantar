@@ -43,17 +43,18 @@ func (c *csrf) Cleanup() {
 // Call executes the Middleware
 // Note: Do not call this yourself
 func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
-	var cookieToken []byte
+	var cookieToken string
 
 	if cookie, err := req.Cookie("JANTAR_ID"); err == nil {
-		cookieToken, _ = hex.DecodeString(cookie.Value)
+		cookieToken = hex.EncodeToString([]byte(cookie.Value))
 	} else {
-		cookieToken = make([]byte, 32)
-		if n, err := rand.Read(cookieToken); n != 32 || err != nil {
+		cookieTokenBuffer := make([]byte, 32)
+		if n, err := rand.Read(cookieTokenBuffer); n != 32 || err != nil {
 			Log.Fatal("failed to generate secret key")
 		}
 
-		http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: hex.EncodeToString(cookieToken)})
+		cookieToken = hex.EncodeToString(cookieTokenBuffer)
+		http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: cookieToken})
 	}
 
 	context.Set(req, "_csrf", cookieToken, true)
@@ -63,7 +64,7 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
 		return true
 	}
 
-	if req.PostFormValue("_csrf-token") == string(cookieToken) {
+	if req.PostFormValue("_csrf-token") == cookieToken {
 		return true
 	}
 
