@@ -37,10 +37,10 @@ type JLData map[string]interface{}
 
 func levelToColor(level uint) int {
 	switch level {
-	case LogLevelInfo:
-		return blue
 	case LogLevelDebug:
 		return green
+	case LogLevelInfo:
+		return blue
 	case LogLevelWarning:
 		return yellow
 	case LogLevelError:
@@ -56,10 +56,10 @@ func levelToColor(level uint) int {
 
 func levelToString(level uint) string {
 	switch level {
-	case LogLevelInfo:
-		return "INFO"
 	case LogLevelDebug:
 		return "DEBU"
+	case LogLevelInfo:
+		return "INFO"
 	case LogLevelWarning:
 		return "WARN"
 	case LogLevelError:
@@ -85,7 +85,7 @@ func NewJLogger(out io.Writer, prefix string, minLevel uint) *JLogger {
 
 // SetMinLevel changes the loggers current minimal logging level
 func (l *JLogger) SetMinLevel(minLevel uint) {
-	if minLevel < LogLevelInfo || minLevel > LogLevelPanic {
+	if minLevel < LogLevelDebug || minLevel > LogLevelPanic {
 		l.minLevel = LogLevelInfo
 	} else {
 		l.minLevel = minLevel
