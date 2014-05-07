@@ -131,3 +131,9 @@ Please take some minutes and read this interesting article about [/dev/urandom/]
 * completion of controller struct
 * reintroduction of models
 * more hooks and a better middleware interface
+
+## Inspirations
+These frameworks have been a source of inspiration and ideas during Jantars development.
+* [Martini](https://github.com/go-martini/martini)
+* [Web](https://github.com/gocraft/web)
+* [Revel](https://github.com/revel/reve)l
