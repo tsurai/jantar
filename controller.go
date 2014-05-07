@@ -13,12 +13,12 @@ type IController interface {
 
 // Controller implements core functionalities of the IController interface
 type Controller struct {
-	Validation
 	name       string
 	action     string
 	Respw      http.ResponseWriter
 	Req        *http.Request
 	RenderArgs map[string]interface{}
+	Validation *Validation
 }
 
 func newController(t reflect.Type, respw http.ResponseWriter, req *http.Request, name string, action string) IController {
@@ -43,7 +43,7 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 	c.Respw = respw
 	c.Req = req
 	c.RenderArgs = make(map[string]interface{})
-	c.Validation.errors = make(map[string][]string)
+	c.Validation = newValidation(respw)
 }
 
 // Render gets the template for the calling action and renders it

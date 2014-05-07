@@ -128,6 +128,7 @@ Please take some minutes and read this interesting article about [/dev/urandom/]
 * flexible config
 	* custom public directory
 	* custom http response handler
+	* custom cookie names for internal modules
 * completion of controller struct
 * reintroduction of models
 * more hooks and a better middleware interface
@@ -136,4 +137,4 @@ Please take some minutes and read this interesting article about [/dev/urandom/]
 These frameworks have been a source of inspiration and ideas during Jantars development.
 * [Martini](https://github.com/go-martini/martini)
 * [Web](https://github.com/gocraft/web)
-* [Revel](https://github.com/revel/reve)l
+* [Revel](https://github.com/revel/revel)

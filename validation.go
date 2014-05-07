@@ -3,12 +3,17 @@ package jantar
 import (
 	"fmt"
 	"math"
+	"net/http"
+	"net/url"
 	"reflect"
 	"regexp"
 	"time"
 )
 
+/* TODO: allow custom cookie name */
+
 type Validation struct {
+	rw        http.ResponseWriter
 	hasErrors bool
 	errors    map[string][]string
 }
@@ -17,6 +22,23 @@ type ValidationError struct {
 	validation *Validation
 	name       string
 	index      int
+}
+
+func newValidation(rw http.ResponseWriter) *Validation {
+	return &Validation{rw, false, make(map[string][]string)}
+}
+
+func (v *Validation) Save() {
+	if v.hasErrors {
+		values := url.Values{}
+		for key, array := range v.errors {
+			for _, val := range array {
+				values.Add(key, val)
+			}
+		}
+
+		http.SetCookie(v.rw, &http.Cookie{Name: "JANTAR_ERRORS", Value: values.Encode(), Secure: false, HttpOnly: true, Path: "/"})
+	}
 }
 
 func (v *Validation) HasErrors() bool {
