@@ -13,6 +13,7 @@ type IController interface {
 
 // Controller implements core functionalities of the IController interface
 type Controller struct {
+	Validation
 	name       string
 	action     string
 	Respw      http.ResponseWriter
