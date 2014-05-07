@@ -28,7 +28,7 @@ func newValidation(rw http.ResponseWriter) *Validation {
 	return &Validation{rw, false, make(map[string][]string)}
 }
 
-func (v *Validation) Save() {
+func (v *Validation) SaveErrors() {
 	if v.hasErrors {
 		values := url.Values{}
 		for key, array := range v.errors {
@@ -62,8 +62,6 @@ func (vr *ValidationError) Message(msg string) *ValidationError {
 
 	return vr
 }
-
-// TODO: use type switch
 
 func (v *Validation) Required(name string, obj interface{}) *ValidationError {
 	valid := false
