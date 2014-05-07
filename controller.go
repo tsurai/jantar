@@ -43,6 +43,7 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 	c.Respw = respw
 	c.Req = req
 	c.RenderArgs = make(map[string]interface{})
+	c.Validation.errors = make(map[string][]string)
 }
 
 // Render gets the template for the calling action and renders it

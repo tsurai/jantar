@@ -48,6 +48,8 @@ func (v *Validation) Required(name string, obj interface{}) *ValidationError {
 	defaultMessage := "Required"
 
 	switch value := obj.(type) {
+	case nil:
+		valid = false
 	case int:
 		valid = value != 0
 	case string:
@@ -73,6 +75,8 @@ func (v *Validation) Min(name string, obj interface{}, min int) *ValidationError
 	defaultMessage := fmt.Sprintf("Must be larger than %d", min)
 
 	switch value := obj.(type) {
+	case nil:
+		valid = false
 	case int:
 		valid = value >= min
 	case string:
@@ -96,6 +100,8 @@ func (v *Validation) Max(name string, obj interface{}, max int) *ValidationError
 	defaultMessage := fmt.Sprintf("Must be smaller than %d", max)
 
 	switch value := obj.(type) {
+	case nil:
+		valid = false
 	case int:
 		valid = value <= max
 	case string:
@@ -119,6 +125,8 @@ func (v *Validation) MinMax(name string, obj interface{}, min int, max int) *Val
 	defaultMessage := fmt.Sprintf("Must be larger %d and smaller %d", min, max)
 
 	switch value := obj.(type) {
+	case nil:
+		valid = false
 	case int:
 		valid = value >= min && value <= max
 	case string:
@@ -142,6 +150,8 @@ func (v *Validation) Length(name string, obj interface{}, length int) *Validatio
 	defaultMessage := fmt.Sprintf("Must be %d symbols long", length)
 
 	switch value := obj.(type) {
+	case nil:
+		valid = false
 	case int:
 		valid = int(math.Ceil(math.Log10(float64(value)))) == length
 	case string:
