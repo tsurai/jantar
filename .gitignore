@@ -2,8 +2,8 @@
 *.o
 *.a
 *.so
-.*.go
 .*
+!.travis.yml
 
 # folders
 _test

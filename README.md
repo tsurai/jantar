@@ -1,6 +1,6 @@
 # Jantar [![GoDoc](https://godoc.org/github.com/tsurai/jantar?status.png)](http://godoc.org/github.com/tsurai/jantar)
 
-Jantar is a lightweight mvc web framework with emphasis on security written in golang. It has been largely inspired by [Martini](https://github.com/codegangsta/martini) but prefers performance over syntactic sugar and aims to provide crucial security settings and features right out of the box.
+Jantar is a lightweight mvc web framework with emphasis on security written in golang. It has initially been largely inspired by [Martini](https://github.com/codegangsta/martini) but prefers performance over syntactic sugar and aims to provide crucial security settings and features right out of the box.
 
 ## Features
 * RESTful pattern with protection against cross-site request forgery
