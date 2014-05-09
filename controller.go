@@ -18,7 +18,7 @@ type Controller struct {
 	Respw      http.ResponseWriter
 	Req        *http.Request
 	RenderArgs map[string]interface{}
-	Validation *Validation
+	Validation *validation
 }
 
 func newController(t reflect.Type, respw http.ResponseWriter, req *http.Request, name string, action string) IController {

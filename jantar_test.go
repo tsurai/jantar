@@ -167,19 +167,19 @@ func benchmarkRoutes(b *testing.B, n int, csrf bool) {
 	handler := routeFor(namespaces, resources, csrf)
 
 	recorder := httptest.NewRecorder()
-	reqId := 0
+	reqID := 0
 	b.ResetTimer()
 	for i := 0; i < b.N*10; i++ {
-		if reqId >= len(requests) {
-			reqId = 0
+		if reqID >= len(requests) {
+			reqID = 0
 		}
-		req := requests[reqId]
+		req := requests[reqID]
 		handler.ServeHTTP(recorder, req)
 
 		if recorder.Code != 200 {
 			panic("wat")
 		}
 
-		reqId += 1
+		reqID += 1
 	}
 }

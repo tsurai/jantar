@@ -12,23 +12,23 @@ import (
 
 /* TODO: allow custom cookie name */
 
-type Validation struct {
+type validation struct {
 	rw        http.ResponseWriter
 	hasErrors bool
 	errors    map[string][]string
 }
 
-type ValidationError struct {
-	validation *Validation
+type validationError struct {
+	validation *validation
 	name       string
 	index      int
 }
 
-func newValidation(rw http.ResponseWriter) *Validation {
-	return &Validation{rw, false, make(map[string][]string)}
+func newvalidation(rw http.ResponseWriter) *validation {
+	return &validation{rw, false, make(map[string][]string)}
 }
 
-func (v *Validation) SaveErrors() {
+func (v *validation) SaveErrors() {
 	if v.hasErrors {
 		values := url.Values{}
 		for key, array := range v.errors {
@@ -41,12 +41,12 @@ func (v *Validation) SaveErrors() {
 	}
 }
 
-func (v *Validation) HasErrors() bool {
+func (v *validation) HasErrors() bool {
 	return v.hasErrors
 }
 
-func (v *Validation) addError(name string, message string) *ValidationError {
-	result := &ValidationError{v, name, -1}
+func (v *validation) addError(name string, message string) *validationError {
+	result := &validationError{v, name, -1}
 
 	v.hasErrors = true
 	v.errors[name] = append(v.errors[name], message)
@@ -55,7 +55,7 @@ func (v *Validation) addError(name string, message string) *ValidationError {
 	return result
 }
 
-func (vr *ValidationError) Message(msg string) *ValidationError {
+func (vr *validationError) Message(msg string) *validationError {
 	if vr != nil && vr.index != -1 {
 		vr.validation.errors[vr.name][vr.index] = msg
 	}
@@ -63,7 +63,7 @@ func (vr *ValidationError) Message(msg string) *ValidationError {
 	return vr
 }
 
-func (v *Validation) Required(name string, obj interface{}) *ValidationError {
+func (v *validation) Required(name string, obj interface{}) *validationError {
 	valid := false
 	defaultMessage := "Required"
 
@@ -90,7 +90,7 @@ func (v *Validation) Required(name string, obj interface{}) *ValidationError {
 	return nil
 }
 
-func (v *Validation) Min(name string, obj interface{}, min int) *ValidationError {
+func (v *validation) Min(name string, obj interface{}, min int) *validationError {
 	valid := false
 	defaultMessage := fmt.Sprintf("Must be larger than %d", min)
 
@@ -115,7 +115,7 @@ func (v *Validation) Min(name string, obj interface{}, min int) *ValidationError
 	return nil
 }
 
-func (v *Validation) Max(name string, obj interface{}, max int) *ValidationError {
+func (v *validation) Max(name string, obj interface{}, max int) *validationError {
 	valid := false
 	defaultMessage := fmt.Sprintf("Must be smaller than %d", max)
 
@@ -140,7 +140,7 @@ func (v *Validation) Max(name string, obj interface{}, max int) *ValidationError
 	return nil
 }
 
-func (v *Validation) MinMax(name string, obj interface{}, min int, max int) *ValidationError {
+func (v *validation) MinMax(name string, obj interface{}, min int, max int) *validationError {
 	valid := false
 	defaultMessage := fmt.Sprintf("Must be larger %d and smaller %d", min, max)
 
@@ -165,7 +165,7 @@ func (v *Validation) MinMax(name string, obj interface{}, min int, max int) *Val
 	return nil
 }
 
-func (v *Validation) Length(name string, obj interface{}, length int) *ValidationError {
+func (v *validation) Length(name string, obj interface{}, length int) *validationError {
 	valid := false
 	defaultMessage := fmt.Sprintf("Must be %d symbols long", length)
 
@@ -190,7 +190,7 @@ func (v *Validation) Length(name string, obj interface{}, length int) *Validatio
 	return nil
 }
 
-func (v *Validation) Equals(name string, obj interface{}, obj2 interface{}) *ValidationError {
+func (v *validation) Equals(name string, obj interface{}, obj2 interface{}) *validationError {
 	defaultMessage := fmt.Sprintf("%v does not equal %v", obj, obj2)
 
 	if obj == nil || obj2 == nil || !reflect.DeepEqual(obj, obj2) {
@@ -200,7 +200,7 @@ func (v *Validation) Equals(name string, obj interface{}, obj2 interface{}) *Val
 	return nil
 }
 
-func (v *Validation) MatchRegex(name string, obj interface{}, pattern string) *ValidationError {
+func (v *validation) MatchRegex(name string, obj interface{}, pattern string) *validationError {
 	valid := true
 	defaultMessage := fmt.Sprintf("Must match regex %s", pattern)
 
@@ -220,7 +220,7 @@ func (v *Validation) MatchRegex(name string, obj interface{}, pattern string) *V
 	return nil
 }
 
-func (v *Validation) Custom(name string, match bool, message string) *ValidationError {
+func (v *validation) Custom(name string, match bool, message string) *validationError {
 	if match {
 		return v.addError(name, message)
 	}
