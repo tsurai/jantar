@@ -24,7 +24,7 @@ type validationError struct {
 	index      int
 }
 
-func newvalidation(rw http.ResponseWriter) *validation {
+func newValidation(rw http.ResponseWriter) *validation {
 	return &validation{rw, false, make(map[string][]string)}
 }
 
