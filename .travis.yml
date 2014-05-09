@@ -1,5 +1,7 @@
 language: go
 go:
   - 1.2
-after_success:
-  - go test -bench=. -benchmem=true
+
+script:
+- go vet ./...
+- go test -bench . -run=Benchmark -v ./...
