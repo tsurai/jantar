@@ -1,6 +1,7 @@
-# Jantar [![GoDoc](https://godoc.org/github.com/tsurai/jantar?status.png)](http://godoc.org/github.com/tsurai/jantar)
+# Jantar [![Build Status](https://travis-ci.org/tsurai/jantar.svg?branch=master)](https://travis-ci.org/tsurai/jantar) [![GoDoc](https://godoc.org/github.com/tsurai/jantar?status.png)](http://godoc.org/github.com/tsurai/jantar)
 
 Jantar is a lightweight mvc web framework with emphasis on security written in golang. It has initially been largely inspired by [Martini](https://github.com/codegangsta/martini) but prefers performance over syntactic sugar and aims to provide crucial security settings and features right out of the box.
+
 
 ## Features
 * RESTful pattern with protection against cross-site request forgery
@@ -19,6 +20,9 @@ Jantar is a lightweight mvc web framework with emphasis on security written in g
 * Responsive to current events
 	* ![Preview](https://i.imgur.com/OKGR3WG.png)
 
+## Requirements
+* go >= 1.2
+
 ## Table of Contents
 * [Current State](#current-state)
 * [Getting Started](#getting-started)
@@ -26,9 +30,6 @@ Jantar is a lightweight mvc web framework with emphasis on security written in g
 * [A note on security](#a-note-on-security)
 	* [/dev/urandom](#devurandom)
 * [Todo List](#todo-list)
-
-## Current State
-Jantar is currently getting completly redesigned and is not usable right now.
 
 ## Getting Started
 
