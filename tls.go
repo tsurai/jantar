@@ -33,7 +33,7 @@ var tlsConfig = &tls.Config{
 	MinVersion:               tls.VersionTLS10,
 }
 
-func loadTlsCertificate(config *TlsConfig) error {
+func loadTLSCertificate(config *TLSConfig) error {
 	var err error
 	var cert tls.Certificate
 	var certPem = config.CertPem
@@ -68,14 +68,14 @@ func loadTlsCertificate(config *TlsConfig) error {
 		return err
 	}
 
-	checkTlsCertificate(cert.Leaf)
+	checkTLSCertificate(cert.Leaf)
 
 	config.cert = cert
 
 	return nil
 }
 
-func checkTlsCertificate(cert *x509.Certificate) {
+func checkTLSCertificate(cert *x509.Certificate) {
 	// is pre heartbleed
 	if cert.NotBefore.Before(time.Date(2014, time.April, 07, 12, 0, 0, 0, time.UTC)) {
 		Log.Warningd(JLData{"issued": cert.NotBefore.UTC().Format(time.RFC822), "fixed": "07 April 14"}, "x509 certificate has been issued before heartbleed(CVE-2014-0160) fix!\nYour secret key and other private information might have been leaked")

@@ -22,7 +22,7 @@ func resourceSetup(N int) (namespaces []string, resources []string, requests []*
 	rand.Read(uniqueID)
 	cookie := &http.Cookie{Name: "JANTAR_ID", Value: hex.EncodeToString(uniqueID)}
 
-	for i := 0; i < N; i += 1 {
+	for i := 0; i < N; i++ {
 		sha1 := sha1.New()
 		io.WriteString(sha1, fmt.Sprintf("%d", i))
 		strResource := fmt.Sprintf("%x", sha1.Sum(nil))
@@ -180,6 +180,6 @@ func benchmarkRoutes(b *testing.B, n int, csrf bool) {
 			panic("wat")
 		}
 
-		reqID += 1
+		reqID++
 	}
 }

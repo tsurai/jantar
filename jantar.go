@@ -33,8 +33,8 @@ type Jantar struct {
 	router     *router
 }
 
-// TlsConfig can be given to Jantar to enable tls support
-type TlsConfig struct {
+// TLSConfig can be given to Jantar to enable tls support
+type TLSConfig struct {
 	CertFile string
 	KeyFile  string
 	CertPem  []byte
@@ -46,7 +46,7 @@ type TlsConfig struct {
 type Config struct {
 	Hostname string
 	Port     int
-	Tls      *TlsConfig
+	TLS      *TLSConfig
 }
 
 // New creates a new Jantar instance ready to listen on a given hostname and port.
@@ -68,7 +68,7 @@ func New(config *Config) *Jantar {
 	}
 
 	if j.config.Port < 1 {
-		if j.config.Tls == nil {
+		if j.config.TLS == nil {
 			j.config.Port = 80
 		} else {
 			j.config.Port = 443
@@ -79,8 +79,8 @@ func New(config *Config) *Jantar {
 	j.AddMiddleware(&csrf{})
 
 	// load ssl certificate
-	if config.Tls != nil {
-		if err := loadTlsCertificate(config.Tls); err != nil {
+	if config.TLS != nil {
+		if err := loadTLSCertificate(config.TLS); err != nil {
 			Log.Fatald(JLData{"error": err}, "failed to load x509 certificate")
 		}
 	}
@@ -173,9 +173,9 @@ func (j *Jantar) listenAndServe(addr string, handler http.Handler) error {
 		addr = ":http"
 	}
 
-	if j.config.Tls != nil {
+	if j.config.TLS != nil {
 		// configure tls with secure settings
-		tlsConfig.Certificates = []tls.Certificate{j.config.Tls.cert}
+		tlsConfig.Certificates = []tls.Certificate{j.config.TLS.cert}
 		j.listener, err = tls.Listen("tcp", addr, tlsConfig)
 
 		// listen redirect port 80 to 443 if using the standard port
@@ -259,7 +259,7 @@ func (j *Jantar) Run() {
 
 	go j.listenForSignals()
 
-	Log.Infod(JLData{"hostname": j.config.Hostname, "port": j.config.Port, "TLS": j.config.Tls != nil}, "starting server & listening")
+	Log.Infod(JLData{"hostname": j.config.Hostname, "port": j.config.Port, "TLS": j.config.TLS != nil}, "starting server & listening")
 
 	if err := j.listenAndServe(fmt.Sprintf("%s:%d", j.config.Hostname, j.config.Port), j); err != nil {
 		Log.Fatal(err)

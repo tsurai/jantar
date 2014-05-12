@@ -17,6 +17,7 @@ var (
 	secretkey []byte
 )
 
+// SecureCookie saves given data in an AES256 encrypted and HMAC(SHA256) signed cookie
 func SecureCookie(usertoken string, data string) *http.Cookie {
 	// set the expiration date to one year in the future
 	expiration := time.Now().AddDate(1, 0, 0).Unix()
@@ -39,6 +40,7 @@ func SecureCookie(usertoken string, data string) *http.Cookie {
 	return &http.Cookie{Name: "AMBER_SESSION", Value: url.QueryEscape(tmp), Secure: false, HttpOnly: true, Path: "/"}
 }
 
+// UnlockCookie decrypts a given SecureCookie and checks its MAC before returning an unencrypted http.Cookie
 func UnlockCookie(cookie *http.Cookie) *http.Cookie {
 	var usertoken string
 	var expiration int64
