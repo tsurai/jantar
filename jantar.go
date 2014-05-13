@@ -222,6 +222,7 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/public/") {
 		servePublic(respw, req)
 	} else if route := j.router.searchRoute(req); route != nil {
+		context.Set(req, "renderArgs", make(map[string]interface{}), true)
 		if j.callMiddleware(respw, req) {
 			route.handler(respw, req)
 		}

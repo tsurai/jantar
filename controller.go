@@ -1,6 +1,7 @@
 package jantar
 
 import (
+	"github.com/tsurai/jantar/context"
 	"net/http"
 	"reflect"
 )
@@ -42,7 +43,7 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 	c.action = action
 	c.Respw = respw
 	c.Req = req
-	c.RenderArgs = make(map[string]interface{})
+	c.RenderArgs = (context.Get(req, "renderArgs").(map[string]interface{}))
 	c.Validation = newValidation(respw)
 }
 
