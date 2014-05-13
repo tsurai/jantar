@@ -61,12 +61,6 @@ func newTemplateManager(directory string) *TemplateManager {
 			router := GetModule(ModuleRouter).(*router)
 			return router.getReverseURL(name, args)
 		},
-		"flash": func(args map[string]interface{}, key string) string {
-			if flashMap, ok := args["flash"]; ok {
-				return flashMap.(map[string]string)[key]
-			}
-			return ""
-		},
 		"since": func(t time.Time) string {
 			seconds := int(time.Since(t).Seconds())
 			if seconds < 60 {
