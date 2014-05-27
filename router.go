@@ -178,7 +178,7 @@ func newRoute(method string, pattern string, handler interface{}) *route {
 	cName := ""
 	cAction := ""
 
-	if reflect.TypeOf(handler).ConvertibleTo(reflect.TypeOf(http.NotFound)) {
+	if reflect.TypeOf(handler) == reflect.TypeOf(http.NotFound) {
 		finalFunc = handler.(func(http.ResponseWriter, *http.Request))
 	} else if cType := getControllerType(handler); cType != nil {
 		fn := runtime.FuncForPC(reflect.ValueOf(handler).Pointer())
@@ -204,7 +204,7 @@ func newRoute(method string, pattern string, handler interface{}) *route {
 			reflect.ValueOf(handler).Call(in)
 		}
 	} else {
-		Log.Warningd(JLData{"type": reflect.TypeOf(handler)}, "failed to add route. Invalid handler type")
+		Log.Warningd(JLData{"type": reflect.TypeOf(handler), "wanted": reflect.TypeOf(http.NotFound)}, "failed to add route. Invalid handler type")
 	}
 
 	return &route{cName, cAction, pattern, method, finalFunc}
