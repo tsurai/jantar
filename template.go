@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -92,8 +91,8 @@ func newTemplateManager(directory string) *TemplateManager {
 			result := "<ul class='pagination'>"
 
 			if curPage > 1 {
-				result += "<li><a href='" + url + "/page/first'>&laquo;First</a></li>" +
-					"<li><a href='" + url + "/page/" + strconv.Itoa(curPage-1) + "'>&laquo;</a></li>"
+				result += fmt.Sprintf("<li><a href='%s/page/first'>&laquo;First</a></li>"+
+					"<li><a href='%[1]s/page/%d'>&laquo;</a></li>", url, curPage-1)
 			}
 
 			if curPage-offset > 1 {
@@ -103,9 +102,9 @@ func newTemplateManager(directory string) *TemplateManager {
 			for i := curPage - offset; i < curPage+offset+1; i++ {
 				if i > 0 && i <= nPages {
 					if i == curPage {
-						result += "<li class='active'><a href='" + url + "/page/" + strconv.Itoa(i) + "'>" + strconv.Itoa(i) + "</a></li>"
+						result += fmt.Sprintf("<li class='active'><a href='%s/page/%d'>%[2]d</a></li>", url, i)
 					} else {
-						result += "<li><a href='" + url + "/page/" + strconv.Itoa(i) + "'>" + strconv.Itoa(i) + "</a></li>"
+						result += fmt.Sprintf("<li><a href='%s/page/%d'>%[2]d</a></li>", url, i)
 					}
 				}
 			}
@@ -115,8 +114,8 @@ func newTemplateManager(directory string) *TemplateManager {
 			}
 
 			if curPage != nPages {
-				result += "<li><a href='" + url + "/page/" + strconv.Itoa(curPage+1) + "'>&raquo;</a></li>" +
-					"<li><a href='" + url + "/page/last'>Last&raquo;</a></li>"
+				result += fmt.Sprintf("<li><a href='%s/page/%d'>&raquo;</a></li>"+
+					"<li><a href='%[1]s/page/last'>Last&raquo;</a></li>", url, curPage+1)
 			}
 			return template.HTML(result + "</ul>")
 		},
