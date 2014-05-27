@@ -88,7 +88,7 @@ func New(config *Config) *Jantar {
 	setModule(ModuleTemplateManager, j.tm)
 	setModule(ModuleRouter, j.router)
 
-	j.AddRoute("GET", "/public/.+", servePublic)
+	http.Handle("public", http.FileServer(http.Dir("./public")))
 
 	return j
 }
@@ -130,27 +130,6 @@ func (j *Jantar) callMiddleware(respw http.ResponseWriter, req *http.Request) bo
 // AddRoute adds a route with given method, pattern and handler to the Router
 func (j *Jantar) AddRoute(method string, pattern string, handler interface{}) *route {
 	return j.router.addRoute(method, pattern, handler)
-}
-
-func servePublic(rw http.ResponseWriter, req *http.Request) {
-	var file http.File
-	var err error
-	var stat os.FileInfo
-	fname := req.URL.Path[len("/public/"):]
-
-	if !strings.HasPrefix(fname, ".") {
-		if file, err = http.Dir("public").Open(fname); err == nil {
-			if stat, err = file.Stat(); err == nil {
-				if !stat.IsDir() {
-					http.ServeContent(rw, req, req.URL.Path, stat.ModTime(), file)
-					file.Close()
-					return
-				}
-			}
-		}
-	}
-
-	http.NotFound(rw, req)
 }
 
 func (j *Jantar) listenForSignals() {
