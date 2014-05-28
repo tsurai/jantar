@@ -259,13 +259,13 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 	respw.Header().Set("X-XSS-Protection", "1;mode=block")
 	respw.Header().Set("X-Content-Type-Options", "nosniff")
 
-	if !serveStatic(respw, req) && !servePublic(respw, req) {
+	if !servePublic(respw, req) {
 		if route := j.router.searchRoute(req); route != nil {
 			context.Set(req, "renderArgs", make(map[string]interface{}), true)
 			if j.callMiddleware(respw, req) {
 				route.handler(respw, req)
 			}
-		} else {
+		} else if !servePublic(respw, req) {
 			Log.Info("404 page not found")
 			http.NotFound(respw, req)
 		}
