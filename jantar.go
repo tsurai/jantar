@@ -265,7 +265,7 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 			if j.callMiddleware(respw, req) {
 				route.handler(respw, req)
 			}
-		} else if !servePublic(respw, req) {
+		} else if !serveStatic(respw, req) {
 			Log.Info("404 page not found")
 			http.NotFound(respw, req)
 		}
