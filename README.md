@@ -130,9 +130,9 @@ Please take some minutes and read this interesting article about [/dev/urandom/]
 	* custom public directory
 	* custom http response handler
 	* custom cookie names for internal modules
-* completion of controller struct
-* reintroduction of models
+	* change standard http header
 * more hooks and a better middleware interface
+* better routing for static files
 
 ## Inspirations
 These frameworks have been a source of inspiration and ideas during Jantars development.

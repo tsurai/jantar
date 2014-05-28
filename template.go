@@ -166,6 +166,8 @@ func (tm *TemplateManager) loadTemplates() error {
 
 	// walk resursive through the template directory
 	res := filepath.Walk(tm.directory, func(path string, info os.FileInfo, err error) error {
+		static := false
+
 		if err != nil {
 			return err
 		}
@@ -183,6 +185,10 @@ func (tm *TemplateManager) loadTemplates() error {
 		}
 
 		if strings.HasSuffix(info.Name(), ".html") {
+			if strings.HasPrefix(path, tm.directory+"/static/") {
+				static = true
+			}
+
 			fdata, err := ioutil.ReadFile(path)
 			if err != nil {
 				return err
@@ -196,11 +202,27 @@ func (tm *TemplateManager) loadTemplates() error {
 				hook.(func(*TemplateManager, string, *[]byte))(tm, tmplName, &fdata)
 			}
 
-			// add the custom template functions to the first template
-			if templates == nil {
-				templates, err = template.New(tmplName).Funcs(tm.tmplFuncs).Parse(string(fdata))
+			// is it a static file?
+			if static {
+				var t *template.Template
+				if t, err = template.New(tmplName).Funcs(tm.tmplFuncs).Parse(string(fdata)); err == nil {
+					filename := tm.directory + "/." + tmplName
+					if err = os.MkdirAll(filename[:len(filename)-len(info.Name())-1], os.ModePerm); err == nil {
+						var f *os.File
+						if f, err = os.Create(filename); err == nil {
+							t.Execute(f, nil)
+						} else {
+							Log.Error(err)
+						}
+					}
+				}
 			} else {
-				_, err = templates.New(tmplName).Parse(string(fdata))
+				// add the custom template functions to the first template
+				if templates == nil {
+					templates, err = template.New(tmplName).Funcs(tm.tmplFuncs).Parse(string(fdata))
+				} else {
+					_, err = templates.New(tmplName).Parse(string(fdata))
+				}
 			}
 
 			if err != nil {
