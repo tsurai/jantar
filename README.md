@@ -133,6 +133,7 @@ Please take some minutes and read this interesting article about [/dev/urandom/]
 	* change standard http header
 * more hooks and a better middleware interface
 * better routing for static files
+* better test coverage
 
 ## Inspirations
 These frameworks have been a source of inspiration and ideas during Jantars development.
