@@ -234,13 +234,6 @@ func (j *Jantar) listenAndServe(addr string, handler http.Handler) error {
 	return nil
 }
 
-// ServeTemplate is a simple http.HandlerFunc wrapper serving a template. It is intended for cases in which a Controller would be too much.
-func (j *Jantar) ServeTemplate(name string) func(http.ResponseWriter, *http.Request) {
-	return func(respw http.ResponseWriter, req *http.Request) {
-		j.tm.RenderTemplate(respw, req, name, make(map[string]interface{}))
-	}
-}
-
 // ServeHTTP implements the http.Handler interface
 func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 	j.wg.Add(1)
