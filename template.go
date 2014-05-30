@@ -121,7 +121,7 @@ func newTemplateManager(directory string) *TemplateManager {
 		},
 	}
 
-	tm := &TemplateManager{directory: directory, tmplFuncs: funcs}
+	tm := &TemplateManager{directory: strings.Replace(strings.ToLower(directory), "\\", "/", -1), tmplFuncs: funcs}
 
 	// register hooks
 	tm.registerHook(TmBeforeParse, reflect.TypeOf(
@@ -167,6 +167,7 @@ func (tm *TemplateManager) loadTemplates() error {
 	// walk resursive through the template directory
 	res := filepath.Walk(tm.directory, func(path string, info os.FileInfo, err error) error {
 		static := false
+		path = strings.Replace(strings.ToLower(path), "\\", "/", -1)
 
 		if err != nil {
 			return err
@@ -194,7 +195,7 @@ func (tm *TemplateManager) loadTemplates() error {
 				return err
 			}
 
-			tmplName := strings.Replace(strings.ToLower(path[len(tm.directory)+1:]), "\\", "/", -1)
+			tmplName := path[len(tm.directory)+1:]
 
 			// call BEFORE_PARSE hooks
 			hooks := tm.getHooks(TmBeforeParse)
@@ -211,8 +212,6 @@ func (tm *TemplateManager) loadTemplates() error {
 						var f *os.File
 						if f, err = os.Create(filename); err == nil {
 							t.Execute(f, nil)
-						} else {
-							Log.Error(err)
 						}
 					}
 				}
