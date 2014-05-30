@@ -288,7 +288,7 @@ func (j *Jantar) Run() {
 	j.initMiddleware()
 
 	if err := j.tm.loadTemplates(); err != nil {
-		Log.Fataldf(JLData{"error": err}, "failed to load templates")
+		Log.Fatal("failed to load templates")
 	}
 
 	go j.listenForSignals()

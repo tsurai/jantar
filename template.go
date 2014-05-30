@@ -165,7 +165,7 @@ func (tm *TemplateManager) loadTemplates() error {
 	go tm.watch()
 
 	// walk resursive through the template directory
-	res := filepath.Walk(tm.directory, func(path string, info os.FileInfo, err error) error {
+	ret := filepath.Walk(tm.directory, func(path string, info os.FileInfo, err error) error {
 		static := false
 		path = strings.Replace(strings.ToLower(path), "\\", "/", -1)
 
@@ -211,7 +211,7 @@ func (tm *TemplateManager) loadTemplates() error {
 					if err = os.MkdirAll(filename[:len(filename)-len(info.Name())-1], os.ModePerm); err == nil {
 						var f *os.File
 						if f, err = os.Create(filename); err == nil {
-							t.Execute(f, nil)
+							err = t.Execute(f, nil)
 						}
 					}
 				}
@@ -225,6 +225,7 @@ func (tm *TemplateManager) loadTemplates() error {
 			}
 
 			if err != nil {
+				Log.Error(err)
 				return err
 			}
 		}
@@ -232,11 +233,11 @@ func (tm *TemplateManager) loadTemplates() error {
 	})
 
 	// no errors occured, override the old list
-	if res == nil {
+	if ret == nil {
 		tm.tmplList = templates
 	}
 
-	return res
+	return ret
 }
 
 func (tm *TemplateManager) getTemplate(name string) *template.Template {
