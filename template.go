@@ -207,7 +207,7 @@ func (tm *TemplateManager) loadTemplates() error {
 			if static {
 				var t *template.Template
 				if t, err = template.New(tmplName).Funcs(tm.tmplFuncs).Parse(string(fdata)); err == nil {
-					filename := tm.directory + "/." + tmplName
+					filename := tm.directory + "/_" + tmplName
 					if err = os.MkdirAll(filename[:len(filename)-len(info.Name())-1], os.ModePerm); err == nil {
 						var f *os.File
 						if f, err = os.Create(filename); err == nil {
