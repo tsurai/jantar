@@ -152,6 +152,7 @@ func (tm *TemplateManager) watch() {
 func (tm *TemplateManager) loadTemplates() error {
 	var err error
 	var templates *template.Template
+	var staticTemplates *template.Template
 
 	// close watcher if running
 	if tm.watcher != nil {
@@ -169,12 +170,8 @@ func (tm *TemplateManager) loadTemplates() error {
 		static := false
 		path = strings.Replace(strings.ToLower(path), "\\", "/", -1)
 
-		if err != nil {
-			return err
-		}
-
 		if info.IsDir() {
-			if strings.HasPrefix(info.Name(), ".") {
+			if strings.HasPrefix(info.Name(), ".") || info.Name() == "_static" {
 				return filepath.SkipDir
 			}
 
@@ -192,30 +189,36 @@ func (tm *TemplateManager) loadTemplates() error {
 
 			fdata, err := ioutil.ReadFile(path)
 			if err != nil {
+				Log.Error(err)
 				return err
 			}
 
 			tmplName := path[len(tm.directory)+1:]
 
-			// call BEFORE_PARSE hooks
-			hooks := tm.getHooks(TmBeforeParse)
-			for _, hook := range hooks {
-				hook.(func(*TemplateManager, string, *[]byte))(tm, tmplName, &fdata)
-			}
-
 			// is it a static file?
 			if static {
-				var t *template.Template
-				if t, err = template.New(tmplName).Funcs(tm.tmplFuncs).Parse(string(fdata)); err == nil {
+				if staticTemplates == nil {
+					staticTemplates, err = template.New(tmplName).Parse(string(fdata))
+				} else {
+					staticTemplates, err = staticTemplates.New(tmplName).Parse(string(fdata))
+				}
+
+				if err == nil && !strings.HasPrefix(tmplName, "_") && !strings.Contains(tmplName, "/_") {
 					filename := tm.directory + "/_" + tmplName
 					if err = os.MkdirAll(filename[:len(filename)-len(info.Name())-1], os.ModePerm); err == nil {
 						var f *os.File
 						if f, err = os.Create(filename); err == nil {
-							err = t.Execute(f, nil)
+							err = staticTemplates.Lookup(tmplName).Execute(f, nil)
 						}
 					}
 				}
 			} else {
+				// call BEFORE_PARSE hooks
+				hooks := tm.getHooks(TmBeforeParse)
+				for _, hook := range hooks {
+					hook.(func(*TemplateManager, string, *[]byte))(tm, tmplName, &fdata)
+				}
+
 				// add the custom template functions to the first template
 				if templates == nil {
 					templates, err = template.New(tmplName).Funcs(tm.tmplFuncs).Parse(string(fdata))
