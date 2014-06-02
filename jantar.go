@@ -145,7 +145,13 @@ func (j *Jantar) listenForSignals() {
 }
 
 func serveStatic(respw http.ResponseWriter, req *http.Request) bool {
-	if file, stat := getFile("/", "views/_static", req.URL.Path); file != nil {
+	target := req.URL.Path
+
+	if req.URL.Path == "/" {
+		target = "/index.html"
+	}
+
+	if file, stat := getFile("/", "views/_static", target); file != nil {
 		http.ServeContent(respw, req, req.URL.Path, stat.ModTime(), file)
 		file.Close()
 
