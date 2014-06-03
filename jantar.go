@@ -200,7 +200,7 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 		if route := j.router.searchRoute(req); route != nil {
 			route.handler(respw, req)
 		} else {
-			Log.Info("404 page not found")
+			Log.Warning("404 page not found")
 			http.NotFound(respw, req)
 		}
 	}
