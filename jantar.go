@@ -144,67 +144,6 @@ func (j *Jantar) listenForSignals() {
 	j.Stop()
 }
 
-func serveStatic(respw http.ResponseWriter, req *http.Request) bool {
-	target := req.URL.Path
-
-	if req.URL.Path == "/" {
-		target = "/index.html"
-	}
-
-	if file, stat := getFile("/", "views/_static", target); file != nil {
-		http.ServeContent(respw, req, req.URL.Path, stat.ModTime(), file)
-		file.Close()
-
-		return true
-	}
-
-	return false
-}
-
-func servePublic(respw http.ResponseWriter, req *http.Request) bool {
-	if strings.HasPrefix(req.URL.Path, "/public/") {
-		if file, stat := getFile("/public/", "public", req.URL.Path); file != nil {
-			http.ServeContent(respw, req, req.URL.Path, stat.ModTime(), file)
-			file.Close()
-
-			return true
-		}
-
-		Log.Errord(JLData{"file": req.URL.Path}, "failed to serve public file")
-		http.NotFound(respw, req)
-
-		return true
-	}
-	return false
-}
-
-func getFile(prefix string, root string, request string) (http.File, os.FileInfo) {
-	var file http.File
-	var stat os.FileInfo
-	var publicpath, publicfilepath string
-	var err error
-
-	fname := request[len(prefix):]
-
-	if !strings.HasPrefix(fname, ".") {
-		if publicpath, err = filepath.Abs(root); err == nil {
-			if publicfilepath, err = filepath.Abs(root + "/" + fname); err == nil {
-				if strings.HasPrefix(publicfilepath, publicpath) {
-					if file, err = http.Dir(root).Open(fname); err == nil {
-						if stat, err = file.Stat(); err == nil {
-							if !stat.IsDir() {
-								return file, stat
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return nil, nil
-}
-
 func (j *Jantar) listenAndServe(addr string, handler http.Handler) error {
 	var err error
 
@@ -258,13 +197,11 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 	respw.Header().Set("X-XSS-Protection", "1;mode=block")
 	respw.Header().Set("X-Content-Type-Options", "nosniff")
 
-	if !servePublic(respw, req) {
+	context.Set(req, "renderArgs", make(map[string]interface{}), true)
+	if j.callMiddleware(respw, req) {
 		if route := j.router.searchRoute(req); route != nil {
-			context.Set(req, "renderArgs", make(map[string]interface{}), true)
-			if j.callMiddleware(respw, req) {
-				route.handler(respw, req)
-			}
-		} else if !serveStatic(respw, req) {
+			route.handler(respw, req)
+		} else {
 			Log.Info("404 page not found")
 			http.NotFound(respw, req)
 		}
