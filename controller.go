@@ -19,7 +19,6 @@ type Controller struct {
 	Respw      http.ResponseWriter
 	Req        *http.Request
 	RenderArgs map[string]interface{}
-	Validation *Validation
 }
 
 func newController(t reflect.Type, respw http.ResponseWriter, req *http.Request, name string, action string) IController {
@@ -44,7 +43,14 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 	c.Respw = respw
 	c.Req = req
 	c.RenderArgs = (context.Get(req, "renderArgs").(map[string]interface{}))
-	c.Validation = newValidation(respw)
+}
+
+func (c *Controller) Redirect(to string, args []interface{}) {
+	router := GetModule(ModuleRouter).(*router)
+
+	url := router.getReverseURL(to, args)
+	c.Respw.Header().Set("Location", url)
+	c.Respw.WriteHeader(302)
 }
 
 // Render gets the template for the calling action and renders it

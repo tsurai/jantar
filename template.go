@@ -47,12 +47,6 @@ func newTemplateManager(directory string) *TemplateManager {
 			}
 			return ret
 		},
-		"errorClass": func(errors []string) string {
-			if errors != nil {
-				return "has-error"
-			}
-			return ""
-		},
 		"toHtml": func(str string) template.HTML {
 			return template.HTML(str)
 		},
