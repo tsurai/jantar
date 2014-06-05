@@ -16,10 +16,6 @@ type csrf struct {
 	Middleware
 }
 
-func noAccess(respw http.ResponseWriter, req *http.Request) {
-	http.Error(respw, "400 bad request", 400)
-}
-
 // Initialize prepares csrf for usage
 // Note: Do not call this yourself
 func (c *csrf) Initialize() {
@@ -68,8 +64,7 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
 		return true
 	}
 
-	/* TODO: use error handler as parameter */
-	noAccess(respw, req)
+	ErrorHandler(http.StatusBadRequest)(respw, req)
 	Log.Errord(JLData{"IP": req.RemoteAddr}, "CSRF detected!")
 
 	/* log ip etc pp */
