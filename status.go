@@ -4,6 +4,8 @@ import (
 	"net/http"
 )
 
+// StatusHandler is a map containing a http.HandlerFunc for each client side http status code. This allows
+// developer to add their own custom http.HandlerFunc for given status codes.
 var StatusHandler map[int]func(http.ResponseWriter, *http.Request)
 
 func init() {
@@ -33,15 +35,16 @@ func init() {
 	for status, response := range statusResponse {
 		response := response
 
-		fn := func(respw http.ResponseWriter, req *http.Request) {
+		StatusHandler[status] = func(respw http.ResponseWriter, req *http.Request) {
 			Log.Warning(response)
 			respw.Write([]byte(response))
 		}
-
-		StatusHandler[status] = fn
 	}
 }
 
+// ErrorHandler returns a http.HandlerFunc for a given http status code or nil if no handler can be found for that code.
+// Developer can add their own handler by changing the StatusHandler map.
+// Note that only 4xx codes are handled by default as 1xx, 2xx and 3xxx are no error codes and 5xx should not be catchable.
 func ErrorHandler(status int) func(http.ResponseWriter, *http.Request) {
 	if handler, ok := StatusHandler[status]; ok {
 		return handler
