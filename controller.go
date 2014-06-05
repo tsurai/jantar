@@ -45,6 +45,7 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 	c.RenderArgs = (context.Get(req, "renderArgs").(map[string]interface{}))
 }
 
+// Redirect redirects the current request to a given named route using args to complete url variables
 func (c *Controller) Redirect(to string, args []interface{}) {
 	router := GetModule(ModuleRouter).(*router)
 
