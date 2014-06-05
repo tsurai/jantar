@@ -128,9 +128,7 @@ Please take some minutes and read this interesting article about [/dev/urandom/]
 * more consistency in error handling
 * flexible config
 	* custom public directory
-	* custom http response handler
 	* custom cookie names for internal modules
-	* change standard http header
 * more hooks and a better middleware interface
 * better routing for static files
 * better test coverage

@@ -44,7 +44,7 @@ func init() {
 
 // ErrorHandler returns a http.HandlerFunc for a given http status code or nil if no handler can be found for that code.
 // Developer can add their own handler by changing the StatusHandler map.
-// Note that only 4xx codes are handled by default as 1xx, 2xx and 3xxx are no error codes and 5xx should not be catchable.
+// Note that only 4xx codes are handled by default as 1xx, 2xx and 3xx are no error codes and 5xx should not be catchable.
 func ErrorHandler(status int) func(http.ResponseWriter, *http.Request) {
 	if handler, ok := StatusHandler[status]; ok {
 		return handler
