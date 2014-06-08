@@ -50,7 +50,7 @@ func (c *csrf) Call(respw http.ResponseWriter, req *http.Request) bool {
 		}
 
 		cookieToken = hex.EncodeToString(cookieTokenBuffer)
-		http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: cookieToken})
+		http.SetCookie(respw, &http.Cookie{Name: "JANTAR_ID", Value: cookieToken, HttpOnly: true, Path: "/"})
 	}
 
 	context.Set(req, "_csrf", cookieToken, true)
