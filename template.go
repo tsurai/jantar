@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/howeyc/fsnotify"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -253,7 +254,7 @@ func (tm *TemplateManager) AddTmplFunc(name string, fn interface{}) {
 
 // RenderTemplate renders a template with the given name and arguments.
 // Note: A Controller should call its Render function instead.
-func (tm *TemplateManager) RenderTemplate(respw http.ResponseWriter, req *http.Request, name string, args map[string]interface{}) error {
+func (tm *TemplateManager) RenderTemplate(w io.Writer, req *http.Request, name string, args map[string]interface{}) error {
 	tmpl := tm.getTemplate(name)
 	if tmpl == nil {
 		return fmt.Errorf("can't find template '%s'", strings.ToLower(name))
@@ -265,7 +266,7 @@ func (tm *TemplateManager) RenderTemplate(respw http.ResponseWriter, req *http.R
 		hook.(func(*http.Request, *TemplateManager, *template.Template, map[string]interface{}))(req, tm, tmpl, args)
 	}
 
-	if err := tmpl.Execute(respw, args); err != nil {
+	if err := tmpl.Execute(w, args); err != nil {
 		return fmt.Errorf("failed to render template. Reason: %s", err.Error())
 	}
 
