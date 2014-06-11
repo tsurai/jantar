@@ -134,7 +134,7 @@ func (r *router) addRoute(method string, path string, handler interface{}) *rout
 func (r *router) searchRoute(req *http.Request) *route {
 	if node, params := r.findPathLeaf(req.Method, req.URL.Path); node != nil {
 		if len(params) != 0 {
-			context.Set(req, "UrlParam", params, true)
+			context.Set(req, "_UrlParam", params, true)
 		}
 
 		return node.route

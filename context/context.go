@@ -17,6 +17,18 @@ var (
 	requestData = make(map[*http.Request]map[interface{}]data)
 )
 
+func UrlParam(req *http.Request) map[string]string {
+	if p, ok := GetOk(req, "_UrlParam"); ok {
+		return p.(map[string]string)
+	}
+
+	return make(map[string]string)
+}
+
+func RenderArgs(req *http.Request) map[string]interface{} {
+	return Get(req, "_RenderArgs").(map[string]interface{})
+}
+
 // SetGlobal saves a value with given key in the global context
 func SetGlobal(key, value interface{}, readOnly bool) {
 	if gd, ok := globalData[key]; !ok || !gd.readOnly {

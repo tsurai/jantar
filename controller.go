@@ -42,7 +42,7 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 	c.action = action
 	c.Respw = respw
 	c.Req = req
-	c.RenderArgs = (context.Get(req, "renderArgs").(map[string]interface{}))
+	c.RenderArgs = context.RenderArgs(req)
 }
 
 // Redirect redirects the current request to a given named route using args to complete url variables

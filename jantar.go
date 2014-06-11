@@ -195,7 +195,7 @@ func (j *Jantar) ServeHTTP(respw http.ResponseWriter, req *http.Request) {
 	respw.Header().Set("X-XSS-Protection", "1;mode=block")
 	respw.Header().Set("X-Content-Type-Options", "nosniff")
 
-	context.Set(req, "renderArgs", make(map[string]interface{}), true)
+	context.Set(req, "_RenderArgs", make(map[string]interface{}), true)
 	if j.callMiddleware(respw, req) {
 		if route := j.router.searchRoute(req); route != nil {
 			route.handler(respw, req)
