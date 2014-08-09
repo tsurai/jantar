@@ -46,7 +46,7 @@ func (c *Controller) setInternal(respw http.ResponseWriter, req *http.Request, n
 }
 
 func (c *Controller) UrlParam() map[string]string {
-	return context.Get(c.Req, "_UrlParam")
+	return context.Get(c.Req, "_UrlParam").(map[string]string)
 }
 
 // Redirect redirects the current request to a given named route using args to complete url variables
