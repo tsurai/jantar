@@ -211,7 +211,7 @@ func newRoute(method string, pattern string, handler interface{}) *route {
 }
 
 func (r *route) Name(name string) {
-	router := context.GetGlobal("Router").(*router)
+	router := GetModule(ModuleRouter).(*router)
 	router.namedRoutes[strings.ToLower(name)] = r
 }
 

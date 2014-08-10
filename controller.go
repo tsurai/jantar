@@ -50,7 +50,7 @@ func (c *Controller) UrlParam() map[string]string {
 }
 
 // Redirect redirects the current request to a given named route using args to complete url variables
-func (c *Controller) Redirect(to string, args []interface{}) {
+func (c *Controller) Redirect(to string, args ...interface{}) {
 	router := GetModule(ModuleRouter).(*router)
 
 	url := router.getReverseURL(to, args)
