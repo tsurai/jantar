@@ -2,12 +2,14 @@
 
 Jantar is a lightweight mvc web framework with emphasis on security written in golang. It has initially been largely inspired by [Martini](https://github.com/codegangsta/martini) but prefers performance over syntactic sugar and aims to provide crucial security settings and features right out of the box.
 
+## DEPRECATED
+**WARNING:** This project is deprecated and is not maintained anymore. The default security settings and feature are out of date and not secure anymore! Use this as reference only!
 
 ## Features
 * RESTful pattern with protection against cross-site request forgery
 * Secure default settings for TLS
-	* No RC4, DES or similarl insecure cipher
-	* No SSL, requires at least TLS 1.0
+	* No RC4, DES or similar insecure cipher
+	* No SSL, requires at least TLS 1.1
 	* Prefered cipher: TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
 * Secure default HTTP header
 	* Strict-Transport-Security: max-age=31536000;includeSubDomains
